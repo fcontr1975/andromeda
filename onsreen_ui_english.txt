@@ -1,0 +1,271 @@
+# On-screen menu localization strings
+# Format: key=value
+# Blank lines and lines starting with # are ignored.
+
+# Generic states/modes
+state.on=ON
+state.off=OFF
+mode.camera_relative=Camera Relative
+mode.world_relative=World Relative
+
+# Main menu entries
+main.load_stg=Load STG
+main.save=Save
+main.save_as_stg=Save As STG
+main.menu_language=Menu Language
+main.help_text_file=Help Text File
+main.reload_help_text=Reload Help Text
+main.flightgear_location=Flightgear Location
+main.custom_scenery_paths=Custom Scenery Paths
+main.grid_settings=Grid Settings
+main.add_object=Add Object
+main.preview_panel_location=Preview Panel Location
+main.set_missing_material_color=Set Missing Material Color
+main.toggle_textured_view=Toggle Textured View
+main.toggle_textured_view_fmt=Toggle Textured View ({state})
+main.set_object_nudge_distance=Set Object Nudge Distance
+main.set_object_nudge_repeat=Set Object Nudge Repeat
+main.toggle_nudge_mode=Toggle Nudge Mode
+main.toggle_nudge_mode_fmt=Toggle Nudge Mode ({mode})
+main.set_camera_start_view=Set Camera Start View
+main.set_camera_clipping=Set Camera Clipping
+main.change_keyboard_bindings=Change Keyboard bindings
+main.exit=Exit
+main.showing_range_fmt=Showing {first}-{last} of {total}
+
+# Menu titles
+title.menu=Menu
+title.bindings=Change Keyboard Bindings
+title.file_browser=File Browser
+title.file_browser_load=Load STG
+title.file_browser_save_as=Save As STG
+title.file_browser_help_text=Select Help Text File
+title.file_browser_menu_language=Select Menu Language
+title.object_nudge=Set Object Nudge Distance
+title.object_nudge_repeat=Set Object Nudge Repeat
+title.missing_material_color=Set Missing Material Color
+title.custom_scenery=Custom Scenery Paths
+title.add_object_cats=Add Object - Select Category
+title.add_object_files=Add Object - {category}
+title.camera_view=Set Camera Start View
+title.camera_clipping=Set Camera Clipping
+title.preview_panel_location=Preview Panel Location
+title.grid_settings=Grid Settings
+
+# Hints
+hint.main=Mouse: hover + click | Up/Down/PgUp/PgDn + Enter | ESC closes menu.
+
+# File browser labels and hints
+file_browser.mode_default=File browser
+file_browser.mode_load=Load .stg file
+file_browser.mode_save_as=Save As target
+file_browser.mode_help_text=Select help text file
+file_browser.mode_menu_language=Select menu language file
+file_browser.hint_load=Mouse: single-click select, double-click open | Enter opens selected | Up/Down/PgUp/PgDn: navigate | ESC: back
+file_browser.hint_save_as=Mouse: single-click select, double-click open/save | Enter opens/saves selected | Type to edit save name | Backspace/Delete: edit | ESC: back
+file_browser.hint_help_text=Mouse: single-click select, double-click apply | Enter applies selected file | Up/Down/PgUp/PgDn: navigate | ESC: back
+file_browser.hint_menu_language=Mouse: single-click select, double-click apply language | Enter applies selected language file | Up/Down/PgUp/PgDn: navigate | ESC: back
+
+# ============================================================
+# App-wide non-menu user-visible strings (centralized here)
+# Note: many of these are still referenced as hardcoded strings in code;
+# they are listed here so translation can be managed in one file.
+# ============================================================
+
+# App/window
+app.window_title=FlightGear Andromeda STG Editor
+app.missing_dependency_pygame=Missing dependency: pygame
+app.install_pygame_hint=Install with: python3 -m pip install pygame
+status.renderer_no_scene=Renderer: {renderer} | No scene loaded
+status.no_btg_loaded=No BTG was loaded; no validation statistics to print.
+
+# Binding labels
+binding.camera_plus_z=camera +Z
+binding.camera_minus_z=camera -Z
+binding.left=left
+binding.right=right
+binding.up=up
+binding.down=down
+binding.speed_down=speed down
+binding.speed_up=speed up
+binding.model_yaw_down=model yaw -
+binding.model_yaw_up=model yaw +
+binding.model_roll_down=model roll -
+binding.model_roll_up=model roll +
+binding.model_pitch_up=model pitch +
+binding.model_pitch_down=model pitch -
+binding.toggle_labels=toggle labels
+binding.toggle_perf_debug=toggle perf debug
+binding.toggle_mouse=toggle mouse
+binding.save_stg=save STG
+binding.copy_object=copy selected object
+binding.paste_object=paste copied object
+binding.delete_object=delete selected object
+binding.cycle_object_prev=prev catalog object
+binding.cycle_object_next=next catalog object
+
+# Field labels
+field.preview_panel_width_px=Panel width (px)
+field.preview_panel_height_px=Panel height (px)
+field.preview_panel_x_px=Panel X (px)
+field.preview_panel_y_px=Panel Y (px)
+field.camera_distance_factor=Distance factor
+field.camera_height_factor=Height factor
+field.camera_near_clip=Near clip (m)
+field.camera_far_clip=Far clip (m, 0=auto)
+field.grid_size=Grid size per side (m)
+field.grid_spacing=Grid line spacing (m)
+field.grid_z=Grid Z height (m)
+field.object_nudge_distance=Nudge distance (m)
+field.object_nudge_repeat_delay=Repeat delay (s)
+field.object_nudge_repeat_interval=Repeat interval (s)
+field.missing_color_r=Missing color R
+field.missing_color_g=Missing color G
+field.missing_color_b=Missing color B
+
+# Dialogs/panels
+preview.panel_title=Placement Preview
+preview.style_fmt=Style: {style}
+dialog.stg_saved_title=STG Saved
+dialog.stg_saved_message_fmt=Saved {filename} with {count} scene objects.
+dialog.load_unsaved_switch_fmt=You have unsaved changes in {source}. Load {target} anyway?
+dialog.ok=OK
+dialog.save=Save
+dialog.discard=Discard
+dialog.cancel=Cancel
+dialog.overwrite=Overwrite
+dialog.overwrite_exists=File already exists. Overwrite?
+dialog.save_completed=Save completed.
+dialog.scene_switch_prompt=Save changes before switching scenes?
+dialog.scene_switch_subtitle=Save = keep changes | Discard = continue without saving | Cancel = stay here
+
+# File browser labels
+file_browser.folder_label=Folder
+file_browser.name_label=Name
+file_browser.empty_folder=(No entries in this folder)
+
+# Render/debug labels
+render.solid=Solid
+render.wireframe=Wireframe
+debug.uv_dense=UV dense:
+debug.uv_sparse=UV sparse:
+debug.missing_mats_fmt=Missing mats: {materials}
+
+# Menu text/help load status
+status.menu_text_load_failed_fmt=Menu text load failed: {error}
+status.menu_text_empty=Menu text load failed: file has no usable key=value lines
+status.menu_text_loaded_fmt=Menu text file loaded: {path}
+status.help_text_load_failed_fmt=Help text load failed: {error}
+status.help_text_empty=Help text load failed: file has no usable lines
+status.help_text_loaded_fmt=Help text file loaded: {path}
+
+# Scene load/save status
+status.load_cancelled=Load cancelled
+status.load_cancelled_unsaved=Load cancelled: current scene was not saved
+status.load_failed_fmt=Load failed: {error}
+status.load_failed_no_stg_entries=Load failed: STG has no object entries
+status.load_failed_no_btg_reference=Load failed: STG has no BTG base/object tile reference
+status.load_failed_resolve_base_fmt=Load failed: could not resolve STG base BTG '{base_path}'
+status.loaded_scene_summary_fmt=Loaded {name} | vtx={vtx} tri={tri} | STG btg={btg} model={model} proxy={proxy}
+status.save_failed_no_base_scene=Save failed: no base scene loaded
+status.save_failed_no_scene_stg=Save failed: no STG file associated with current scene
+status.save_failed_no_target=Save failed: no target path provided
+status.save_failed_fmt=Save failed: {error}
+status.saved_stg_fmt=Saved STG: {filename} | wrote {count} scene objects
+
+# Selection/object manipulation status
+status.select_model_first=Select a model first (crosshair + left click)
+status.no_model_selected_delete=No model selected to delete
+status.no_model_selected_copy=No model selected to copy
+status.no_model_under_crosshair=No model under crosshair
+status.clipboard_empty=Nothing in clipboard - Ctrl+C to copy a selected model first
+status.cycle_failed_no_scene=Cycle failed: no scene loaded
+status.cycle_failed_catalog_empty=Cycle failed: object catalog is empty
+status.cycle_failed_category_empty=Cycle failed: selected category has no entries
+status.cycle_failed_load_fmt=Cycle failed: could not load '{object_path}'
+status.add_object_failed_no_scene=Add object failed: no scene loaded
+status.add_object_failed_load_fmt=Add object failed: could not load '{object_path}'
+status.paste_failed_no_scene=Paste failed: no scene loaded
+status.deleted_object_fmt=Deleted [{kind}] {path}
+status.copied_object_fmt=Copied M{index} [{kind}] {path}
+status.selected_object_fmt=Selected model M{index} [{kind}] {path}
+
+# View/render toggle status
+status.speed_scale_fmt=Speed scale: {value}
+status.no_angle_step_presets=No angle step presets configured
+status.model_angle_step_fmt=Model angle step: {step} deg (preset {index}/{total})
+status.selected_offsets_fmt=Selected M{index} offsets | yaw={yaw:.1f} deg pitch={pitch:.1f} deg roll={roll:.1f} deg
+status.selected_transform_fmt=Moved selected model | dE={east:+.2f} dN={north:+.2f} dU={up:+.2f} m | dYaw={yaw:+.1f} deg
+status.reframed_tile=Reframed tile in view
+status.reframe_no_tile=No loaded tile to reframe
+status.help_overlay_fmt=Help overlay: {state}
+status.debug_overlay_fmt=Debug overlay: {state}
+status.textured_view_fmt=Textured view: {state}
+status.render_mode_fmt=Render mode: {mode}
+status.model_labels_fmt=Model labels: {state}
+status.mouse_capture_fmt=Mouse capture: {state}
+status.rotation_perf_logging_fmt=Rotation perf logging: {state}
+
+# Nudge/settings validation and apply status
+status.nudge_distance_empty=Object nudge distance cannot be empty
+status.nudge_distance_invalid_fmt=Invalid object nudge value: '{value}'
+status.nudge_distance_positive=Object nudge distance must be > 0
+status.nudge_step_fmt=Object nudge step: {value} m
+status.nudge_repeat_fields_empty=Object nudge repeat fields cannot be empty
+status.nudge_repeat_invalid_fmt=Invalid object nudge repeat value: '{value}'
+status.nudge_repeat_invalid_range=Repeat delay must be >= 0 and interval must be > 0
+status.nudge_repeat_applied_fmt=Object nudge repeat: delay={delay:.2f}s interval={interval:.2f}s
+status.missing_color_fields_empty=Missing material color fields cannot be empty
+status.missing_color_invalid_fmt=Invalid missing material color value: '{value}'
+status.missing_color_range=Missing material color values must be between 0 and 255
+status.missing_color_applied_fmt=Missing material color: RGB({r}, {g}, {b})
+status.camera_view_fields_empty=Camera view fields cannot be empty
+status.camera_view_invalid_fmt=Invalid camera view value: '{value}'
+status.camera_view_invalid_range=Camera distance must be > 0.05 and height must be >= 0.0
+status.camera_view_applied_fmt=Camera start view | distance={distance:.2f} height={height:.2f}
+status.camera_clipping_fields_empty=Camera clipping fields cannot be empty
+status.camera_clipping_invalid_fmt=Invalid camera clipping value: '{value}'
+status.camera_near_positive=Near clip must be > 0
+status.camera_far_non_negative=Far clip must be >= 0 (use 0 for auto)
+status.camera_far_gt_near=Far clip must be greater than near clip
+status.camera_clipping_applied_fmt=Camera clipping | near={near}m far={far}
+status.preview_panel_fields_empty=Preview panel fields cannot be empty
+status.preview_panel_invalid_fmt=Invalid preview panel value: '{value}'
+status.preview_panel_min_size=Preview panel width must be >= 120 and height must be >= 100
+status.preview_panel_xy_non_negative=Preview panel X/Y must be >= 0
+status.preview_panel_applied_fmt=Preview panel updated | size=({width}x{height}) pos=({x},{y})
+status.grid_fields_empty=Grid settings fields cannot be empty
+status.grid_invalid_fmt=Invalid grid value: '{value}'
+status.grid_size_positive=Grid size must be > 0
+status.grid_spacing_positive=Grid spacing must be > 0
+status.grid_applied_fmt=Grid updated | size={size}m spacing={spacing}m z={z}m
+
+# File browser/custom scenery/add object status
+status.file_browser_failed_fmt=File browser failed: {error}
+status.directory_not_fg_root=Selected directory is not a FlightGear data root (Textures + Materials required)
+status.flightgear_location_set_fmt=FlightGear location set: {path} | object catalog entries: {entries}
+status.custom_path_exists_fmt=Custom scenery already listed: {path}
+status.custom_path_added_fmt=Added custom scenery path: {path} | object catalog entries: {entries}
+status.custom_path_removed_fmt=Removed custom scenery path: {path} | object catalog entries: {entries}
+status.no_custom_paths_to_remove=No custom scenery paths to remove
+status.catalog_refreshed_fmt=Object catalog refreshed | entries: {entries}
+status.preview_render_mode_fmt=Preview render mode: {mode}
+status.preview_object_fmt=Preview object: {path}
+status.cycled_object_fmt=Cycled to [{kind}] {path}
+status.added_object_fmt=Added [{kind}] {path}
+status.pasted_object_fmt=Pasted [{kind}] {path}
+status.object_nudge_mode_fmt=Object nudge mode: {mode}
+status.load_select_stg=Load failed: select a .stg file
+status.save_as_no_scene_stg=Save As failed: no STG file associated with current scene
+status.reload_help_no_file=Reload failed: no help text file selected
+status.reload_help_fallback_fmt=Reload failed for selected file; loaded fallback: {path}
+status.reload_help_failed=Reload failed: unable to load selected help text file
+
+# Custom scenery panel
+custom_scenery.empty_paths=(No custom scenery paths configured)
+
+# Binding capture
+status.binding_update_cancelled=Binding update cancelled
+status.bound_action_fmt=Bound {action_label} -> {binding}
+status.press_key_bind_fmt=Press a key to bind '{action_label}'
+prompt.binding_capture_fmt=Press new key for '{action_label}' (ESC cancels)

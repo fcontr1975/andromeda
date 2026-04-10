@@ -1,0 +1,48 @@
+# Texte d'aide à l'écran d'Andromeda
+#
+# Notes de localisation :
+# - Vous pouvez réorganiser les lignes librement.
+# - Les lignes vides et les lignes commençant par # sont ignorées.
+# - Les espaces réservés de liaison sont pris en charge à l'aide de {bind:action_name}.
+# Exemple : {bind:forward}
+
+Contrôles
+{bind:forward} : caméra +Z normal
+{bind:backward} : caméra -Z normale
+{bind:left} : gauche
+{bind:right} : à droite
+{bind:up} : vers le haut
+{bind:down} : vers le bas
+{bind:speed_down} : ralentir
+{bind:speed_up}/plus : accélérer
+molette de la souris haut/bas : accélérer/diminuer
+{bind:model_yaw_down}/{bind:model_yaw_up} : modèle lacet -/+
+{bind:model_roll_down}/{bind:model_roll_up} : rouleau de modèle -/+
+{bind:model_pitch_down}/{bind:model_pitch_up} : pas du modèle -/+
+{bind:toggle_labels} : étiquettes activées/désactivées
+{bind:toggle_perf_debug} : activation/désactivation de la connexion aux performances
+bouton droit de la souris : basculer la capture de la souris (voler/non-voler)
+{bind:toggle_mouse} : activer/désactiver la capture de la souris (clavier)
+{bind:save_stg} : sauvegarder STG
+{bind:copy_object} : copier l'objet sélectionné
+{bind:paste_object} : coller l'objet copié
+{bind:delete_object} : supprimer l'objet sélectionné
+{bind:cycle_object_prev}/{bind:cycle_object_next} : article du catalogue cycles
+ctrl+pgup / ctrl+pgdn : préréglage du pas d'angle -/+
+[ : pas de coup de pouce -0,25 m
+] : pas de déplacement +0,25 m
+shift+[ / shift+] : préréglage du pas d'angle -/+
+touches fléchées : déplacer l'objet sélectionné X/Y
+Maj+haut/bas : déplace l'objet sélectionné Z
+shift+gauche/droite : lacet de l'objet sélectionné -/+
+mode souris (capture désactivée) : le réticule suit le curseur de la souris
+glisser vers la gauche (mode souris) : déplacer l'objet sélectionné X/Y
+Maj+glisser vers la gauche : souris Y -> objet Z, souris X -> objet lacet
+espace : menu d'ajout d'objet
+menu > Emplacement du Flightgear : définir la racine de la texture
+échap : menu
+.: vignette zoom/recadrage
+onglet : bascule filaire
+h : aide à basculer la superposition
+y : basculement de la vue texturée
+t : superposition de débogage de texture

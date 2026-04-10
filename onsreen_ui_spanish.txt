@@ -1,0 +1,271 @@
+# On-screen menu localization strings
+# Format: key=value
+# Blank lines and lines starting with # are ignored.
+
+# Generic states/modes
+state.on=ENCENDIDO
+state.off=APAGADO
+mode.camera_relative=Relativo a la cámara
+mode.world_relative=Relativo mundial
+
+# Main menu entries
+main.load_stg=Cargar STG
+main.save=Ahorrar
+main.save_as_stg=Guardar como STG
+main.menu_language=Idioma del menú
+main.help_text_file=Archivo de texto de ayuda
+main.reload_help_text=Recargar texto de ayuda
+main.flightgear_location=Ubicación del equipo de vuelo
+main.custom_scenery_paths=Caminos de paisajes personalizados
+main.grid_settings=Configuración de cuadrícula
+main.add_object=Agregar objeto
+main.preview_panel_location=Ubicación del panel de vista previa
+main.set_missing_material_color=Establecer color de material faltante
+main.toggle_textured_view=Alternar vista texturizada
+main.toggle_textured_view_fmt=Alternar vista texturizada ({state})
+main.set_object_nudge_distance=Establecer distancia de desplazamiento del objeto
+main.set_object_nudge_repeat=Establecer repetición de desplazamiento de objeto
+main.toggle_nudge_mode=Alternar modo de empuje
+main.toggle_nudge_mode_fmt=Alternar modo de empuje ({mode})
+main.set_camera_start_view=Establecer vista de inicio de cámara
+main.set_camera_clipping=Establecer recorte de cámara
+main.change_keyboard_bindings=Cambiar enlaces de teclado
+main.exit=Salida
+main.showing_range_fmt=Mostrando {first}-{last} de {total}
+
+# Menu titles
+title.menu=Menú
+title.bindings=Cambiar combinaciones de teclado
+title.file_browser=Explorador de archivos
+title.file_browser_load=Cargar STG
+title.file_browser_save_as=Guardar como STG
+title.file_browser_help_text=Seleccione el archivo de texto de ayuda
+title.file_browser_menu_language=Seleccionar idioma del menú
+title.object_nudge=Establecer distancia de desplazamiento del objeto
+title.object_nudge_repeat=Establecer repetición de desplazamiento de objeto
+title.missing_material_color=Establecer color de material faltante
+title.custom_scenery=Caminos de paisajes personalizados
+title.add_object_cats=Agregar objeto - Seleccionar categoría
+title.add_object_files=Agregar objeto - {category}
+title.camera_view=Establecer vista de inicio de cámara
+title.camera_clipping=Establecer recorte de cámara
+title.preview_panel_location=Ubicación del panel de vista previa
+title.grid_settings=Configuración de cuadrícula
+
+# Hints
+hint.main=Ratón: pasar el cursor + hacer clic | Arriba/Abajo/RePág/AvPág + Intro | ESC cierra el menú.
+
+# File browser labels and hints
+file_browser.mode_default=Explorador de archivos
+file_browser.mode_load=Cargar archivo .stg
+file_browser.mode_save_as=Guardar como destino
+file_browser.mode_help_text=Seleccionar archivo de texto de ayuda
+file_browser.mode_menu_language=Seleccionar archivo de idioma del menú
+file_browser.hint_load=Ratón: seleccione con un solo clic, haga doble clic en abrir | Ingresar abre seleccionados | Arriba/Abajo/RePág/AvPág: navegar | ESC: atrás
+file_browser.hint_save_as=Ratón: seleccione con un solo clic, haga doble clic en abrir/guardar | Ingresar abre/guarda seleccionado | Escribe para editar guardar nombre | Retroceso/Eliminar: editar | ESC: atrás
+file_browser.hint_help_text=Ratón: seleccione con un solo clic, haga doble clic en aplicar | Ingresar aplica el archivo seleccionado | Arriba/Abajo/RePág/AvPág: navegar | ESC: atrás
+file_browser.hint_menu_language=Ratón: seleccione con un solo clic, haga doble clic en aplicar idioma | Ingresar aplica el archivo de idioma seleccionado | Arriba/Abajo/RePág/AvPág: navegar | ESC: atrás
+
+# ============================================================
+# App-wide non-menu user-visible strings (centralized here)
+# Note: many of these are still referenced as hardcoded strings in code;
+# they are listed here so translation can be managed in one file.
+# ============================================================
+
+# App/window
+app.window_title=Editor FlightGear Andrómeda STG
+app.missing_dependency_pygame=Dependencia faltante: pygame
+app.install_pygame_hint=Instalar con: python3 -m pip instalar pygame
+status.renderer_no_scene=Representador: {renderer} | Ninguna escena cargada
+status.no_btg_loaded=No se cargó ningún BTG; no hay estadísticas de validación para imprimir.
+
+# Binding labels
+binding.camera_plus_z=cámara + Z
+binding.camera_minus_z=cámara -Z
+binding.left=izquierda
+binding.right=bien
+binding.up=arriba
+binding.down=abajo
+binding.speed_down=acelerar
+binding.speed_up=acelerar
+binding.model_yaw_down=modelo de guiñada -
+binding.model_yaw_up=modelo de guiñada +
+binding.model_roll_down=rollo de modelo -
+binding.model_roll_up=rollo de modelo +
+binding.model_pitch_up=tono del modelo +
+binding.model_pitch_down=paso del modelo -
+binding.toggle_labels=alternar etiquetas
+binding.toggle_perf_debug=alternar depuración de rendimiento
+binding.toggle_mouse=alternar el mouse
+binding.save_stg=guardar STG
+binding.copy_object=copiar objeto seleccionado
+binding.paste_object=pegar objeto copiado
+binding.delete_object=eliminar objeto seleccionado
+binding.cycle_object_prev=objeto del catálogo anterior
+binding.cycle_object_next=siguiente objeto del catálogo
+
+# Field labels
+field.preview_panel_width_px=Ancho del panel (px)
+field.preview_panel_height_px=Altura del panel (px)
+field.preview_panel_x_px=Panel X (píxeles)
+field.preview_panel_y_px=Posicion Y del panel (px)
+field.camera_distance_factor=factor de distancia
+field.camera_height_factor=factor de altura
+field.camera_near_clip=Cerca del clip (m)
+field.camera_far_clip=Clip lejano (m, 0=automático)
+field.grid_size=Tamaño de cuadrícula por lado (m)
+field.grid_spacing=Espaciado entre líneas de cuadrícula (m)
+field.grid_z=Altura de la rejilla Z (m)
+field.object_nudge_distance=Distancia de empuje (m)
+field.object_nudge_repeat_delay=Repetir retraso(s)
+field.object_nudge_repeat_interval=Intervalo(s) de repetición
+field.missing_color_r=Color faltante R
+field.missing_color_g=Color faltante G
+field.missing_color_b=Falta el color B
+
+# Dialogs/panels
+preview.panel_title=Vista previa de ubicación
+preview.style_fmt=Estilo: {style}
+dialog.stg_saved_title=STG guardado
+dialog.stg_saved_message_fmt=Guardado {filename} con {count} objetos de escena.
+dialog.load_unsaved_switch_fmt=Tiene cambios no guardados en {source}. ¿Cargar {target} de todos modos?
+dialog.ok=DE ACUERDO
+dialog.save=Ahorrar
+dialog.discard=Desechar
+dialog.cancel=Cancelar
+dialog.overwrite=Exagerar
+dialog.overwrite_exists=El archivo ya existe. ¿Exagerar?
+dialog.save_completed=Guardar completado.
+dialog.scene_switch_prompt=¿Guardar cambios antes de cambiar de escena?
+dialog.scene_switch_subtitle=Guardar = mantener cambios | Descartar = continuar sin guardar | Cancelar = quedarse aquí
+
+# File browser labels
+file_browser.folder_label=Carpeta
+file_browser.name_label=Nombre
+file_browser.empty_folder=(No hay entradas en esta carpeta)
+
+# Render/debug labels
+render.solid=Sólido
+render.wireframe=estructura alámbrica
+debug.uv_dense=Denso UV:
+debug.uv_sparse=UV escasa:
+debug.missing_mats_fmt=Tapetes faltantes: {materials}
+
+# Menu text/help load status
+status.menu_text_load_failed_fmt=Error al cargar el texto del menú: {error}
+status.menu_text_empty=Error al cargar el texto del menú: el archivo no tiene líneas clave=valor utilizables
+status.menu_text_loaded_fmt=Archivo de texto del menú cargado: {path}
+status.help_text_load_failed_fmt=Error al cargar el texto de ayuda: {error}
+status.help_text_empty=Error al cargar el texto de ayuda: el archivo no tiene líneas utilizables
+status.help_text_loaded_fmt=Archivo de texto de ayuda cargado: {path}
+
+# Scene load/save status
+status.load_cancelled=Carga cancelada
+status.load_cancelled_unsaved=Carga cancelada: la escena actual no se guardó
+status.load_failed_fmt=Error de carga: {error}
+status.load_failed_no_stg_entries=Error de carga: STG no tiene entradas de objetos
+status.load_failed_no_btg_reference=Error de carga: STG no tiene referencia de mosaico de objeto/base BTG
+status.load_failed_resolve_base_fmt=Error de carga: no se pudo resolver STG base BTG '{base_path}'
+status.loaded_scene_summary_fmt=Cargado {name} | vtx={vtx} tri={tri} | STG btg={btg} modelo={model} proxy={proxy}
+status.save_failed_no_base_scene=Error al guardar: no se ha cargado ninguna escena base
+status.save_failed_no_scene_stg=Error al guardar: no hay ningún archivo STG asociado con la escena actual
+status.save_failed_no_target=Error al guardar: no se proporcionó la ruta de destino
+status.save_failed_fmt=Error al guardar: {error}
+status.saved_stg_fmt=STG guardado: {filename} | escribió {count} objetos de escena
+
+# Selection/object manipulation status
+status.select_model_first=Seleccione un modelo primero (cruz + clic izquierdo)
+status.no_model_selected_delete=No se seleccionó ningún modelo para eliminar
+status.no_model_selected_copy=No se seleccionó ningún modelo para copiar
+status.no_model_under_crosshair=Ningún modelo bajo la mira
+status.clipboard_empty=Nada en el portapapeles: Ctrl+C para copiar primero un modelo seleccionado
+status.cycle_failed_no_scene=Ciclo fallido: no se ha cargado ninguna escena
+status.cycle_failed_catalog_empty=Ciclo fallido: el catálogo de objetos está vacío
+status.cycle_failed_category_empty=Ciclo fallido: la categoría seleccionada no tiene entradas
+status.cycle_failed_load_fmt=Ciclo fallido: no se pudo cargar '{object_path}'
+status.add_object_failed_no_scene=Error al agregar objeto: no se cargó ninguna escena
+status.add_object_failed_load_fmt=Error al agregar objeto: no se pudo cargar '{object_path}'
+status.paste_failed_no_scene=Error al pegar: no se ha cargado ninguna escena
+status.deleted_object_fmt=Eliminado [{kind}] {path}
+status.copied_object_fmt=Copiado M{index} [{kind}] {path}
+status.selected_object_fmt=Modelo seleccionado M{index} [{kind}] {path}
+
+# View/render toggle status
+status.speed_scale_fmt=Escala de velocidad: {value}
+status.no_angle_step_presets=No hay ajustes preestablecidos de pasos de ángulo configurados
+status.model_angle_step_fmt=Paso de ángulo del modelo: {step} grados (preestablecido {index}/{total})
+status.selected_offsets_fmt=Compensaciones M{index} seleccionadas | guiñada = {yaw:.1f} grados inclinación = {pitch:.1f} grados balanceo = {roll:.1f} grados
+status.selected_transform_fmt=Modelo seleccionado movido | dE={east:+.2f} dN={north:+.2f} dU={up:+.2f} m | dYaw={yaw:+.1f} grados
+status.reframed_tile=Azulejo reencuadrado a la vista
+status.reframe_no_tile=No hay mosaicos cargados para reenmarcar
+status.help_overlay_fmt=Superposición de ayuda: {state}
+status.debug_overlay_fmt=Superposición de depuración: {state}
+status.textured_view_fmt=Vista texturizada: {state}
+status.render_mode_fmt=Modo de renderizado: {mode}
+status.model_labels_fmt=Etiquetas de modelo: {state}
+status.mouse_capture_fmt=Captura del mouse: {state}
+status.rotation_perf_logging_fmt=Registro de rendimiento de rotación: {state}
+
+# Nudge/settings validation and apply status
+status.nudge_distance_empty=La distancia de desplazamiento del objeto no puede estar vacía
+status.nudge_distance_invalid_fmt=Valor de empuje de objeto no válido: '{value}'
+status.nudge_distance_positive=La distancia de desplazamiento del objeto debe ser > 0
+status.nudge_step_fmt=Paso de empuje de objeto: {value} m
+status.nudge_repeat_fields_empty=Los campos de repetición de desplazamiento de objetos no pueden estar vacíos
+status.nudge_repeat_invalid_fmt=Valor de repetición de empujón de objeto no válido: '{value}'
+status.nudge_repeat_invalid_range=El retraso de repetición debe ser >= 0 y el intervalo debe ser > 0
+status.nudge_repeat_applied_fmt=Repetición de empuje de objeto: retraso={delay:.2f}s intervalo={interval:.2f}s
+status.missing_color_fields_empty=Los campos de color de material faltantes no pueden estar vacíos
+status.missing_color_invalid_fmt=Valor de color de material faltante no válido: '{value}'
+status.missing_color_range=Los valores de color de material faltantes deben estar entre 0 y 255
+status.missing_color_applied_fmt=Color del material faltante: RGB({r}, {g}, {b})
+status.camera_view_fields_empty=Los campos de vista de cámara no pueden estar vacíos
+status.camera_view_invalid_fmt=Valor de vista de cámara no válido: '{value}'
+status.camera_view_invalid_range=La distancia de la cámara debe ser > 0,05 y la altura debe ser >= 0,0
+status.camera_view_applied_fmt=Vista de inicio de la cámara | distancia={distance:.2f} altura={height:.2f}
+status.camera_clipping_fields_empty=Los campos de recorte de cámara no pueden estar vacíos
+status.camera_clipping_invalid_fmt=Valor de recorte de cámara no válido: '{value}'
+status.camera_near_positive=El clip cercano debe ser > 0
+status.camera_far_non_negative=El clip lejano debe ser >= 0 (use 0 para automático)
+status.camera_far_gt_near=El clip lejano debe ser mayor que el clip cercano
+status.camera_clipping_applied_fmt=Recorte de cámara | cerca={near}m lejos={far}
+status.preview_panel_fields_empty=Los campos del panel de vista previa no pueden estar vacíos
+status.preview_panel_invalid_fmt=Valor del panel de vista previa no válido: '{value}'
+status.preview_panel_min_size=El ancho del panel de vista previa debe ser >= 120 y la altura debe ser >= 100
+status.preview_panel_xy_non_negative=El panel de vista previa X/Y debe ser >= 0
+status.preview_panel_applied_fmt=Panel de vista previa actualizado | tamaño=({width}x{height}) pos=({x},{y})
+status.grid_fields_empty=Los campos de configuración de cuadrícula no pueden estar vacíos
+status.grid_invalid_fmt=Valor de cuadrícula no válido: '{value}'
+status.grid_size_positive=El tamaño de la cuadrícula debe ser > 0
+status.grid_spacing_positive=El espaciado de la cuadrícula debe ser > 0
+status.grid_applied_fmt=Cuadrícula actualizada | tamaño={size}m espaciado={spacing}m z={z}m
+
+# File browser/custom scenery/add object status
+status.file_browser_failed_fmt=Error del explorador de archivos: {error}
+status.directory_not_fg_root=El directorio seleccionado no es una raíz de datos de FlightGear (se requieren texturas y materiales)
+status.flightgear_location_set_fmt=Ubicación de FlightGear establecida: {path} | entradas del catálogo de objetos: {entries}
+status.custom_path_exists_fmt=Paisaje personalizado ya listado: {path}
+status.custom_path_added_fmt=Se agregó una ruta de escenario personalizada: {path} | entradas del catálogo de objetos: {entries}
+status.custom_path_removed_fmt=Se eliminó la ruta del escenario personalizado: {path} | entradas del catálogo de objetos: {entries}
+status.no_custom_paths_to_remove=No hay rutas de escenario personalizadas para eliminar
+status.catalog_refreshed_fmt=Catálogo de objetos actualizado | entradas: {entries}
+status.preview_render_mode_fmt=Modo de renderizado de vista previa: {mode}
+status.preview_object_fmt=Objeto de vista previa: {path}
+status.cycled_object_fmt=Ciclo a [{kind}] {path}
+status.added_object_fmt=Añadido [{kind}] {path}
+status.pasted_object_fmt=Pegado [{kind}] {path}
+status.object_nudge_mode_fmt=Modo de desplazamiento de objetos: {mode}
+status.load_select_stg=Error de carga: seleccione un archivo .stg
+status.save_as_no_scene_stg=Error al guardar como: no hay ningún archivo STG asociado con la escena actual
+status.reload_help_no_file=Falló la recarga: no se seleccionó ningún archivo de texto de ayuda
+status.reload_help_fallback_fmt=Error al recargar el archivo seleccionado; respaldo cargado: {path}
+status.reload_help_failed=Error al recargar: no se puede cargar el archivo de texto de ayuda seleccionado
+
+# Custom scenery panel
+custom_scenery.empty_paths=(No hay rutas de escenario personalizadas configuradas)
+
+# Binding capture
+status.binding_update_cancelled=Actualización vinculante cancelada
+status.bound_action_fmt=Encuadernado {action_label} -> {binding}
+status.press_key_bind_fmt=Presione una tecla para vincular '{action_label}'
+prompt.binding_capture_fmt=Presione una nueva tecla para '{action_label}' (ESC se cancela)

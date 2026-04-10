@@ -1,0 +1,48 @@
+# Andromeda on-screen help text
+#
+# Localization notes:
+# - You can reorder lines freely.
+# - Blank lines and lines starting with # are ignored.
+# - Binding placeholders are supported using {bind:action_name}.
+#   Example: {bind:forward}
+
+Controls
+{bind:forward}: camera +Z normal
+{bind:backward}: camera -Z normal
+{bind:left}: left
+{bind:right}: right
+{bind:up}: up
+{bind:down}: down
+{bind:speed_down}: speed down
+{bind:speed_up}/plus: speed up
+mouse wheel up/down: speed up/down
+{bind:model_yaw_down}/{bind:model_yaw_up}: model yaw -/+
+{bind:model_roll_down}/{bind:model_roll_up}: model roll -/+
+{bind:model_pitch_down}/{bind:model_pitch_up}: model pitch -/+
+{bind:toggle_labels}: labels on/off
+{bind:toggle_perf_debug}: perf logging on/off
+right mouse button: toggle mouse capture (fly/no-fly)
+{bind:toggle_mouse}: toggle mouse capture (keyboard)
+{bind:save_stg}: save STG
+{bind:copy_object}: copy selected object
+{bind:paste_object}: paste copied object
+{bind:delete_object}: delete selected object
+{bind:cycle_object_prev}/{bind:cycle_object_next}: cycle catalog item
+ctrl+pgup / ctrl+pgdn: angle step preset -/+
+[: nudge step -0.25 m
+]: nudge step +0.25 m
+shift+[ / shift+]: angle step preset -/+
+arrow keys: move selected object X/Y
+shift+up/down: move selected object Z
+shift+left/right: selected object yaw -/+
+mouse mode (capture OFF): crosshair follows mouse cursor
+left drag (mouse mode): move selected object X/Y
+shift+left drag: mouse Y -> object Z, mouse X -> object yaw
+space: add object menu
+menu > Flightgear Location: set texture root
+esc: menu
+.: zoom/reframe tile
+tab: wireframe toggle
+h: help overlay toggle
+y: textured view toggle
+t: texture debug overlay

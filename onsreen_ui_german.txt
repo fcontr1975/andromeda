@@ -1,0 +1,271 @@
+# On-screen menu localization strings
+# Format: key=value
+# Blank lines and lines starting with # are ignored.
+
+# Generic states/modes
+state.on=EIN
+state.off=AUS
+mode.camera_relative=Kamerarelativ
+mode.world_relative=Weltrelativ
+
+# Main menu entries
+main.load_stg=STG laden
+main.save=Speichern
+main.save_as_stg=Als STG speichern
+main.menu_language=Menüsprache
+main.help_text_file=Hilfetextdatei
+main.reload_help_text=Hilfetext neu laden
+main.flightgear_location=Standort der Flugausrüstung
+main.custom_scenery_paths=Benutzerdefinierte Landschaftspfade
+main.grid_settings=Rastereinstellungen
+main.add_object=Objekt hinzufügen
+main.preview_panel_location=Position des Vorschaufensters
+main.set_missing_material_color=Legen Sie die fehlende Materialfarbe fest
+main.toggle_textured_view=Strukturierte Ansicht umschalten
+main.toggle_textured_view_fmt=Strukturierte Ansicht umschalten ({state})
+main.set_object_nudge_distance=Legen Sie den Abstand des Objektschubs fest
+main.set_object_nudge_repeat=Legen Sie die Objekt-Nudge-Wiederholung fest
+main.toggle_nudge_mode=Schalten Sie den Nudge-Modus um
+main.toggle_nudge_mode_fmt=Nudge-Modus umschalten ({mode})
+main.set_camera_start_view=Stellen Sie die Startansicht der Kamera ein
+main.set_camera_clipping=Legen Sie den Kameraausschnitt fest
+main.change_keyboard_bindings=Tastaturbelegungen ändern
+main.exit=Ausfahrt
+main.showing_range_fmt=Zeigt {first}-{last} von {total}
+
+# Menu titles
+title.menu=Speisekarte
+title.bindings=Tastaturbelegung ändern
+title.file_browser=Dateibrowser
+title.file_browser_load=STG laden
+title.file_browser_save_as=Als STG speichern
+title.file_browser_help_text=Wählen Sie Hilfetextdatei
+title.file_browser_menu_language=Wählen Sie Menüsprache
+title.object_nudge=Legen Sie den Abstand des Objektschubs fest
+title.object_nudge_repeat=Legen Sie die Objekt-Nudge-Wiederholung fest
+title.missing_material_color=Legen Sie die fehlende Materialfarbe fest
+title.custom_scenery=Benutzerdefinierte Landschaftspfade
+title.add_object_cats=Objekt hinzufügen – Kategorie auswählen
+title.add_object_files=Objekt hinzufügen – {category}
+title.camera_view=Stellen Sie die Startansicht der Kamera ein
+title.camera_clipping=Legen Sie den Kameraausschnitt fest
+title.preview_panel_location=Position des Vorschaufensters
+title.grid_settings=Rastereinstellungen
+
+# Hints
+hint.main=Maus: Bewegen Sie den Mauszeiger und klicken Sie auf | Auf/Ab/BildAuf/BildAb + Eingabetaste | ESC schließt das Menü.
+
+# File browser labels and hints
+file_browser.mode_default=Dateibrowser
+file_browser.mode_load=Laden Sie die .stg-Datei
+file_browser.mode_save_as=Als Ziel speichern
+file_browser.mode_help_text=Wählen Sie eine Hilfetextdatei aus
+file_browser.mode_menu_language=Menü-Sprachdatei auswählen
+file_browser.hint_load=Maus: Einzelklick auswählen, Doppelklick öffnen | Enter öffnet ausgewähltes | Auf/Ab/BildAuf/BildAb: navigieren | ESC: zurück
+file_browser.hint_save_as=Maus: Einzelklick auswählen, Doppelklick öffnen/speichern | Enter öffnet/speichert die Auswahl | Geben Sie ein, um den Speichernamen zu bearbeiten | Rücktaste/Löschen: Bearbeiten | ESC: zurück
+file_browser.hint_help_text=Maus: Einzelklick „Auswählen“, Doppelklick „Anwenden |“. Enter wendet ausgewählte Datei | an Auf/Ab/BildAuf/BildAb: navigieren | ESC: zurück
+file_browser.hint_menu_language=Maus: Einfachklick auswählen, Doppelklick Sprache anwenden | Enter wendet ausgewählte Sprachdatei | an Auf/Ab/BildAuf/BildAb: navigieren | ESC: zurück
+
+# ============================================================
+# App-wide non-menu user-visible strings (centralized here)
+# Note: many of these are still referenced as hardcoded strings in code;
+# they are listed here so translation can be managed in one file.
+# ============================================================
+
+# App/window
+app.window_title=FlightGear Andromeda STG-Editor
+app.missing_dependency_pygame=Fehlende Abhängigkeit: Pygame
+app.install_pygame_hint=Installieren mit: python3 -m pip install pygame
+status.renderer_no_scene=Renderer: {renderer} | Keine Szene geladen
+status.no_btg_loaded=Es wurde kein BTG geladen; Keine Validierungsstatistik zum Ausdrucken.
+
+# Binding labels
+binding.camera_plus_z=Kamera +Z
+binding.camera_minus_z=Kamera -Z
+binding.left=links
+binding.right=Rechts
+binding.up=hoch
+binding.down=runter
+binding.speed_down=Geschwindigkeit verringern
+binding.speed_up=beschleunigen
+binding.model_yaw_down=Modellgieren -
+binding.model_yaw_up=Modell Gier +
+binding.model_roll_down=Modellrolle -
+binding.model_roll_up=Modellrolle +
+binding.model_pitch_up=Modellneigung +
+binding.model_pitch_down=Modellplatz -
+binding.toggle_labels=Beschriftungen umschalten
+binding.toggle_perf_debug=Perf-Debug umschalten
+binding.toggle_mouse=Maus umschalten
+binding.save_stg=Speichern Sie STG
+binding.copy_object=Ausgewähltes Objekt kopieren
+binding.paste_object=Kopiertes Objekt einfügen
+binding.delete_object=Ausgewähltes Objekt löschen
+binding.cycle_object_prev=vorheriges Katalogobjekt
+binding.cycle_object_next=nächstes Katalogobjekt
+
+# Field labels
+field.preview_panel_width_px=Panelbreite (px)
+field.preview_panel_height_px=Panelhöhe (px)
+field.preview_panel_x_px=Panel X-Position (px)
+field.preview_panel_y_px=Panel Y-Position (px)
+field.camera_distance_factor=Distanzfaktor
+field.camera_height_factor=Höhenfaktor
+field.camera_near_clip=Nahe Clip (m)
+field.camera_far_clip=Fernclip (m, 0=auto)
+field.grid_size=Gittergröße pro Seite (m)
+field.grid_spacing=Rasterlinienabstand (m)
+field.grid_z=Gitter-Z-Höhe (m)
+field.object_nudge_distance=Schubweite (m)
+field.object_nudge_repeat_delay=Wiederholungsverzögerung(en)
+field.object_nudge_repeat_interval=Wiederholungsintervall(e)
+field.missing_color_r=Fehlende Farbe R
+field.missing_color_g=Farbe G fehlt
+field.missing_color_b=Farbe B fehlt
+
+# Dialogs/panels
+preview.panel_title=Platzierungsvorschau
+preview.style_fmt=Stil: {style}
+dialog.stg_saved_title=STG gespeichert
+dialog.stg_saved_message_fmt={filename} mit {count} Szenenobjekten gespeichert.
+dialog.load_unsaved_switch_fmt=Sie haben nicht gespeicherte Änderungen in {source}. {target} trotzdem laden?
+dialog.ok=OK
+dialog.save=Speichern
+dialog.discard=Verwerfen
+dialog.cancel=Stornieren
+dialog.overwrite=Überschreiben
+dialog.overwrite_exists=Datei existiert bereits. Überschreiben?
+dialog.save_completed=Speichern abgeschlossen.
+dialog.scene_switch_prompt=Änderungen vor Szenenwechsel speichern?
+dialog.scene_switch_subtitle=Speichern = Änderungen beibehalten | Verwerfen = ohne Speichern fortfahren | Abbrechen = hier bleiben
+
+# File browser labels
+file_browser.folder_label=Ordner
+file_browser.name_label=Dateiname
+file_browser.empty_folder=(Keine Einträge in diesem Ordner)
+
+# Render/debug labels
+render.solid=Solide
+render.wireframe=Drahtmodell
+debug.uv_dense=UV-dicht:
+debug.uv_sparse=UV-sparsam:
+debug.missing_mats_fmt=Fehlende Matten: {materials}
+
+# Menu text/help load status
+status.menu_text_load_failed_fmt=Laden des Menütexts fehlgeschlagen: {error}
+status.menu_text_empty=Das Laden des Menütexts ist fehlgeschlagen: Die Datei enthält keine verwendbaren Schlüssel=Wert-Zeilen
+status.menu_text_loaded_fmt=Menütextdatei geladen: {path}
+status.help_text_load_failed_fmt=Das Laden des Hilfetextes ist fehlgeschlagen: {error}
+status.help_text_empty=Das Laden des Hilfetextes ist fehlgeschlagen: Die Datei enthält keine verwendbaren Zeilen
+status.help_text_loaded_fmt=Hilfetextdatei geladen: {path}
+
+# Scene load/save status
+status.load_cancelled=Laden abgebrochen
+status.load_cancelled_unsaved=Laden abgebrochen: Aktuelle Szene wurde nicht gespeichert
+status.load_failed_fmt=Laden fehlgeschlagen: {error}
+status.load_failed_no_stg_entries=Laden fehlgeschlagen: STG hat keine Objekteinträge
+status.load_failed_no_btg_reference=Laden fehlgeschlagen: STG hat keine BTG-Basis-/Objektkachelreferenz
+status.load_failed_resolve_base_fmt=Laden fehlgeschlagen: STG-Basis-BTG „{base_path}“ konnte nicht aufgelöst werden
+status.loaded_scene_summary_fmt=Geladen {name} | vtx={vtx} tri={tri} | STG btg={btg} Modell={model} Proxy={proxy}
+status.save_failed_no_base_scene=Speichern fehlgeschlagen: Keine Basisszene geladen
+status.save_failed_no_scene_stg=Speichern fehlgeschlagen: Mit der aktuellen Szene ist keine STG-Datei verknüpft
+status.save_failed_no_target=Speichern fehlgeschlagen: Kein Zielpfad angegeben
+status.save_failed_fmt=Speichern fehlgeschlagen: {error}
+status.saved_stg_fmt=Gespeichertes STG: {filename} | hat {count} Szenenobjekte geschrieben
+
+# Selection/object manipulation status
+status.select_model_first=Wählen Sie zuerst ein Modell aus (Fadenkreuz + Linksklick)
+status.no_model_selected_delete=Kein Modell zum Löschen ausgewählt
+status.no_model_selected_copy=Kein Modell zum Kopieren ausgewählt
+status.no_model_under_crosshair=Kein Modell im Fadenkreuz
+status.clipboard_empty=Nichts in der Zwischenablage – Strg+C, um zuerst ein ausgewähltes Modell zu kopieren
+status.cycle_failed_no_scene=Zyklus fehlgeschlagen: Keine Szene geladen
+status.cycle_failed_catalog_empty=Zyklus fehlgeschlagen: Objektkatalog ist leer
+status.cycle_failed_category_empty=Zyklus fehlgeschlagen: Die ausgewählte Kategorie hat keine Einträge
+status.cycle_failed_load_fmt=Zyklus fehlgeschlagen: „{object_path}“ konnte nicht geladen werden
+status.add_object_failed_no_scene=Objekt hinzufügen fehlgeschlagen: Keine Szene geladen
+status.add_object_failed_load_fmt=Objekt hinzufügen fehlgeschlagen: „{object_path}“ konnte nicht geladen werden
+status.paste_failed_no_scene=Einfügen fehlgeschlagen: Keine Szene geladen
+status.deleted_object_fmt=Gelöscht [{kind}] {path}
+status.copied_object_fmt=Kopiert M{index} [{kind}] {path}
+status.selected_object_fmt=Ausgewähltes Modell M{index} [{kind}] {path}
+
+# View/render toggle status
+status.speed_scale_fmt=Geschwindigkeitsskala: {value}
+status.no_angle_step_presets=Keine Winkelschrittvoreinstellungen konfiguriert
+status.model_angle_step_fmt=Modellwinkelschritt: {step} Grad (voreingestellt {index}/{total})
+status.selected_offsets_fmt=Ausgewählte M{index}-Offsets | Gieren={yaw:.1f} Grad Nicken={pitch:.1f} Grad Rollen={roll:.1f} Grad
+status.selected_transform_fmt=Ausgewähltes Modell verschoben | dE={east:+.2f} dN={north:+.2f} dU={up:+.2f} m | dYaw={yaw:+.1f} Grad
+status.reframed_tile=Neu gerahmte Kachel im Blick
+status.reframe_no_tile=Keine geladene Kachel zum Neurahmen
+status.help_overlay_fmt=Hilfe-Overlay: {state}
+status.debug_overlay_fmt=Debug-Overlay: {state}
+status.textured_view_fmt=Strukturierte Ansicht: {state}
+status.render_mode_fmt=Rendermodus: {mode}
+status.model_labels_fmt=Modellbezeichnungen: {state}
+status.mouse_capture_fmt=Mauserfassung: {state}
+status.rotation_perf_logging_fmt=Protokollierung der Rotationsleistung: {state}
+
+# Nudge/settings validation and apply status
+status.nudge_distance_empty=Die Objektverschiebeentfernung darf nicht leer sein
+status.nudge_distance_invalid_fmt=Ungültiger Objekt-Nudge-Wert: „{value}“
+status.nudge_distance_positive=Der Abstand zum Anstoßen des Objekts muss > 0 sein
+status.nudge_step_fmt=Objekt-Nudge-Schritt: {value} m
+status.nudge_repeat_fields_empty=Wiederholungsfelder für die Objektverschiebung dürfen nicht leer sein
+status.nudge_repeat_invalid_fmt=Ungültiger Objekt-Nudge-Wiederholungswert: „{value}“
+status.nudge_repeat_invalid_range=Die Wiederholungsverzögerung muss >= 0 sein und das Intervall muss > 0 sein
+status.nudge_repeat_applied_fmt=Objekt-Nudge-Wiederholung: Verzögerung={delay:.2f}s Intervall={interval:.2f}s
+status.missing_color_fields_empty=Fehlende Materialfarbfelder dürfen nicht leer sein
+status.missing_color_invalid_fmt=Ungültiger fehlender Materialfarbwert: „{value}“
+status.missing_color_range=Fehlende Materialfarbwerte müssen zwischen 0 und 255 liegen
+status.missing_color_applied_fmt=Fehlende Materialfarbe: RGB({r}, {g}, {b})
+status.camera_view_fields_empty=Kameraansichtsfelder dürfen nicht leer sein
+status.camera_view_invalid_fmt=Ungültiger Kameraansichtswert: „{value}“
+status.camera_view_invalid_range=Der Kameraabstand muss > 0,05 und die Höhe muss >= 0,0 sein
+status.camera_view_applied_fmt=Kamera-Startansicht | Abstand={distance:.2f} Höhe={height:.2f}
+status.camera_clipping_fields_empty=Kameraausschnittfelder dürfen nicht leer sein
+status.camera_clipping_invalid_fmt=Ungültiger Kameraausschnittwert: „{value}“
+status.camera_near_positive=Der Near-Clip muss > 0 sein
+status.camera_far_non_negative=Der ferne Clip muss >= 0 sein (0 für Auto verwenden)
+status.camera_far_gt_near=Der ferne Clip muss größer sein als der nahe Clip
+status.camera_clipping_applied_fmt=Kameraausschnitt | nah={near}m fern={far}
+status.preview_panel_fields_empty=Die Felder im Vorschaufenster dürfen nicht leer sein
+status.preview_panel_invalid_fmt=Ungültiger Vorschaubereichswert: „{value}“
+status.preview_panel_min_size=Die Breite des Vorschaufensters muss >= 120 und die Höhe >= 100 sein
+status.preview_panel_xy_non_negative=Vorschaufenster X/Y muss >= 0 sein
+status.preview_panel_applied_fmt=Vorschaufenster aktualisiert | Größe=({width}x{height}) pos=({x},{y})
+status.grid_fields_empty=Felder für Rastereinstellungen dürfen nicht leer sein
+status.grid_invalid_fmt=Ungültiger Rasterwert: „{value}“
+status.grid_size_positive=Die Rastergröße muss > 0 sein
+status.grid_spacing_positive=Der Rasterabstand muss > 0 sein
+status.grid_applied_fmt=Raster aktualisiert | Größe={size}m Abstand={spacing}m z={z}m
+
+# File browser/custom scenery/add object status
+status.file_browser_failed_fmt=Dateibrowser fehlgeschlagen: {error}
+status.directory_not_fg_root=Das ausgewählte Verzeichnis ist kein FlightGear-Datenstamm (Texturen + Materialien erforderlich)
+status.flightgear_location_set_fmt=FlightGear-Standortsatz: {path} | Objektkatalogeinträge: {entries}
+status.custom_path_exists_fmt=Benutzerdefinierte Szenerie bereits aufgeführt: {path}
+status.custom_path_added_fmt=Benutzerdefinierter Landschaftspfad hinzugefügt: {path} | Objektkatalogeinträge: {entries}
+status.custom_path_removed_fmt=Benutzerdefinierter Szeneriepfad entfernt: {path} | Objektkatalogeinträge: {entries}
+status.no_custom_paths_to_remove=Es müssen keine benutzerdefinierten Landschaftspfade entfernt werden
+status.catalog_refreshed_fmt=Objektkatalog aktualisiert | Einträge: {entries}
+status.preview_render_mode_fmt=Vorschau-Rendermodus: {mode}
+status.preview_object_fmt=Vorschauobjekt: {path}
+status.cycled_object_fmt=Mit dem Rad zu [{kind}] {path} gefahren
+status.added_object_fmt=Hinzugefügt [{kind}] {path}
+status.pasted_object_fmt=Eingefügt [{kind}] {path}
+status.object_nudge_mode_fmt=Objekt-Nudge-Modus: {mode}
+status.load_select_stg=Laden fehlgeschlagen: Wählen Sie eine .stg-Datei aus
+status.save_as_no_scene_stg=Speichern unter fehlgeschlagen: Mit der aktuellen Szene ist keine STG-Datei verknüpft
+status.reload_help_no_file=Neuladen fehlgeschlagen: Keine Hilfetextdatei ausgewählt
+status.reload_help_fallback_fmt=Neuladen der ausgewählten Datei fehlgeschlagen; geladener Fallback: {path}
+status.reload_help_failed=Neuladen fehlgeschlagen: Die ausgewählte Hilfetextdatei konnte nicht geladen werden
+
+# Custom scenery panel
+custom_scenery.empty_paths=(Keine benutzerdefinierten Landschaftspfade konfiguriert)
+
+# Binding capture
+status.binding_update_cancelled=Bindungsaktualisierung abgebrochen
+status.bound_action_fmt=Gebunden {action_label} -> {binding}
+status.press_key_bind_fmt=Drücken Sie eine Taste, um „{action_label}“ zu binden.
+prompt.binding_capture_fmt=Neue Taste für „{action_label}“ drücken (ESC bricht ab)

@@ -1,0 +1,48 @@
+# Andromeda-Hilfetext auf dem Bildschirm
+#
+# Hinweise zur Lokalisierung:
+# – Sie können die Zeilen frei neu anordnen.
+# – Leerzeilen und Zeilen, die mit # beginnen, werden ignoriert.
+# – Bindungsplatzhalter werden mit {bind:action_name} unterstützt.
+# Beispiel: {bind:forward}
+
+Kontrollen
+{bind:forward}: Kamera +Z normal
+{bind:backward}: Kamera -Z normal
+{bind:left}: links
+{bind:right}: richtig
+{bind:up}: oben
+{bind:down}: unten
+{bind:speed_down}: Geschwindigkeit verringern
+{bind:speed_up}/plus: beschleunigen
+Mausrad hoch/runter: Geschwindigkeit erhöhen/verringern
+{bind:model_yaw_down}/{bind:model_yaw_up}: Modellgieren -/+
+{bind:model_roll_down}/{bind:model_roll_up}: Modellrolle -/+
+{bind:model_pitch_down}/{bind:model_pitch_up}: Modellneigung -/+
+{bind:toggle_labels}: Beschriftungen ein/aus
+{bind:toggle_perf_debug}: Perf-Protokollierung ein-/ausschalten
+Rechte Maustaste: Mauserfassung umschalten (fliegend/nicht fliegend)
+{bind:toggle_mouse}: Mauserfassung umschalten (Tastatur)
+{bind:save_stg}: STG speichern
+{bind:copy_object}: Ausgewähltes Objekt kopieren
+{bind:paste_object}: Kopiertes Objekt einfügen
+{bind:delete_object}: Ausgewähltes Objekt löschen
+{bind:cycle_object_prev}/{bind:cycle_object_next}: Zykluskatalogelement
+Strg+pgup / Strg+pgdn: Winkelschrittvorgabe -/+
+[: Schubschritt -0,25 m
+]: Schubschritt +0,25 m
+Shift+[ / Shift+]: Winkelschrittvorgabe -/+
+Pfeiltasten: Ausgewähltes Objekt X/Y verschieben
+Umschalt+hoch/runter: Ausgewähltes Objekt Z verschieben
+Umschalt+links/rechts: ausgewähltes Objekt gieren -/+
+Mausmodus (Aufnahme AUS): Fadenkreuz folgt dem Mauszeiger
+Ziehen mit der linken Maustaste (Mausmodus): Ausgewähltes Objekt in X/Y verschieben
+Umschalt+Linksziehen: Maus Y -> Objekt Z, Maus X -> Objekt gieren
+Leerzeichen: Objektmenü hinzufügen
+Menü > Flightgear-Position: Textur-Root festlegen
+esc: Menü
+.: Kachel zoomen/neu gestalten
+Registerkarte: Drahtmodell umschalten
+h: Hilfe-Overlay-Umschaltung
+y: Strukturierte Ansicht umschalten
+t: Textur-Debug-Overlay

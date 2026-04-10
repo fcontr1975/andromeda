@@ -1,0 +1,271 @@
+# On-screen menu localization strings
+# Format: key=value
+# Blank lines and lines starting with # are ignored.
+
+# Generic states/modes
+state.on=ACTIVÉ
+state.off=DÉSACTIVÉ
+mode.camera_relative=Par rapport à la caméra
+mode.world_relative=Relatif mondial
+
+# Main menu entries
+main.load_stg=Charger STG
+main.save=Sauvegarder
+main.save_as_stg=Enregistrer sous STG
+main.menu_language=Langue des menus
+main.help_text_file=Fichier texte d'aide
+main.reload_help_text=Recharger le texte d'aide
+main.flightgear_location=Emplacement du train de vol
+main.custom_scenery_paths=Chemins de paysages personnalisés
+main.grid_settings=Paramètres de la grille
+main.add_object=Ajouter un objet
+main.preview_panel_location=Emplacement du panneau d'aperçu
+main.set_missing_material_color=Définir la couleur du matériau manquant
+main.toggle_textured_view=Basculer la vue texturée
+main.toggle_textured_view_fmt=Basculer la vue texturée ({state})
+main.set_object_nudge_distance=Définir la distance de déplacement de l'objet
+main.set_object_nudge_repeat=Définir la répétition du déplacement d'objet
+main.toggle_nudge_mode=Activer/Désactiver le mode Coup de pouce
+main.toggle_nudge_mode_fmt=Basculer le mode Nudge ({mode})
+main.set_camera_start_view=Définir la vue de démarrage de la caméra
+main.set_camera_clipping=Définir le découpage de la caméra
+main.change_keyboard_bindings=Modifier les liaisons du clavier
+main.exit=Sortie
+main.showing_range_fmt=Affichage de {first}-{last} sur {total}
+
+# Menu titles
+title.menu=Menu principal
+title.bindings=Modifier les liaisons du clavier
+title.file_browser=Navigateur de fichiers
+title.file_browser_load=Charger STG
+title.file_browser_save_as=Enregistrer sous STG
+title.file_browser_help_text=Sélectionnez le fichier texte d'aide
+title.file_browser_menu_language=Sélectionner la langue des menus
+title.object_nudge=Définir la distance de déplacement de l'objet
+title.object_nudge_repeat=Définir la répétition du déplacement d'objet
+title.missing_material_color=Définir la couleur du matériau manquant
+title.custom_scenery=Chemins de paysages personnalisés
+title.add_object_cats=Ajouter un objet - Sélectionner une catégorie
+title.add_object_files=Ajouter un objet - {category}
+title.camera_view=Définir la vue de démarrage de la caméra
+title.camera_clipping=Définir le découpage de la caméra
+title.preview_panel_location=Emplacement du panneau d'aperçu
+title.grid_settings=Paramètres de la grille
+
+# Hints
+hint.main=Souris : survoler + cliquer | Haut/Bas/PgUp/PgDn + Entrée | ESC ferme le menu.
+
+# File browser labels and hints
+file_browser.mode_default=Navigateur de fichiers
+file_browser.mode_load=Charger le fichier .stg
+file_browser.mode_save_as=Enregistrer sous la cible
+file_browser.mode_help_text=Sélectionnez le fichier texte d'aide
+file_browser.mode_menu_language=Sélectionner le fichier de langue du menu
+file_browser.hint_load=Souris : sélectionnez en un seul clic, double-cliquez sur Ouvrir | Entrer ouvre la sélection | Haut/Bas/PgUp/PgDn : naviguer | ESC : retour
+file_browser.hint_save_as=Souris : sélectionner en un seul clic, double-cliquer sur ouvrir/enregistrer | Entrez ouvre/enregistre la sélection | Tapez pour modifier le nom de sauvegarde | Retour arrière/Supprimer : modifier | ESC : retour
+file_browser.hint_help_text=Souris : sélectionnez en un seul clic, double-cliquez sur Appliquer | Entrée applique le fichier sélectionné | Haut/Bas/PgUp/PgDn : naviguer | ESC : retour
+file_browser.hint_menu_language=Souris : sélectionnez un simple clic, double-cliquez sur Appliquer la langue | Entrée applique le fichier de langue sélectionné | Haut/Bas/PgUp/PgDn : naviguer | ESC : retour
+
+# ============================================================
+# App-wide non-menu user-visible strings (centralized here)
+# Note: many of these are still referenced as hardcoded strings in code;
+# they are listed here so translation can be managed in one file.
+# ============================================================
+
+# App/window
+app.window_title=Editeur FlightGear Andromeda STG
+app.missing_dependency_pygame=Dépendance manquante : pygame
+app.install_pygame_hint=Installer avec : python3 -m pip install pygame
+status.renderer_no_scene=Moteur de rendu : {renderer} | Aucune scène chargée
+status.no_btg_loaded=Aucun BTG n'a été chargé ; aucune statistique de validation à imprimer.
+
+# Binding labels
+binding.camera_plus_z=caméra +Z
+binding.camera_minus_z=caméra -Z
+binding.left=gauche
+binding.right=droite
+binding.up=en haut
+binding.down=vers le bas
+binding.speed_down=ralentir
+binding.speed_up=accélérer
+binding.model_yaw_down=modèle de lacet -
+binding.model_yaw_up=lacet du modèle +
+binding.model_roll_down=rouleau de modèle -
+binding.model_roll_up=rouleau de modèle +
+binding.model_pitch_up=pas de modèle +
+binding.model_pitch_down=pas de modèle -
+binding.toggle_labels=basculer les étiquettes
+binding.toggle_perf_debug=basculer le débogage des performances
+binding.toggle_mouse=basculer la souris
+binding.save_stg=enregistrer STG
+binding.copy_object=copier l'objet sélectionné
+binding.paste_object=coller l'objet copié
+binding.delete_object=supprimer l'objet sélectionné
+binding.cycle_object_prev=objet de catalogue précédent
+binding.cycle_object_next=prochain objet du catalogue
+
+# Field labels
+field.preview_panel_width_px=Largeur du panneau (px)
+field.preview_panel_height_px=Hauteur du panneau (px)
+field.preview_panel_x_px=Panneau X (px)
+field.preview_panel_y_px=Panneau Y (px)
+field.camera_distance_factor=Facteur de distance
+field.camera_height_factor=Facteur de hauteur
+field.camera_near_clip=Près du clip (m)
+field.camera_far_clip=Clip éloigné (m, 0=auto)
+field.grid_size=Taille de la grille par côté (m)
+field.grid_spacing=Espacement des lignes de grille (m)
+field.grid_z=Hauteur grille Z (m)
+field.object_nudge_distance=Distance de déplacement (m)
+field.object_nudge_repeat_delay=Répéter le(s) délai(s)
+field.object_nudge_repeat_interval=Intervalle(s) de répétition
+field.missing_color_r=Couleur R manquante
+field.missing_color_g=Couleur G manquante
+field.missing_color_b=Couleur B manquante
+
+# Dialogs/panels
+preview.panel_title=Aperçu de l'emplacement
+preview.style_fmt=Style : {style}
+dialog.stg_saved_title=STG enregistré
+dialog.stg_saved_message_fmt={filename} enregistré avec les objets de scène {count}.
+dialog.load_unsaved_switch_fmt=Vous avez des modifications non enregistrées dans {source}. Charger {target} quand même ?
+dialog.ok=D'ACCORD
+dialog.save=Sauvegarder
+dialog.discard=Jeter
+dialog.cancel=Annuler
+dialog.overwrite=Écraser
+dialog.overwrite_exists=Le fichier existe déjà. Écraser?
+dialog.save_completed=Sauvegarde terminée.
+dialog.scene_switch_prompt=Enregistrer les modifications avant de changer de scène ?
+dialog.scene_switch_subtitle=Enregistrer = conserver les modifications | Supprimer = continuer sans enregistrer | Annuler = rester ici
+
+# File browser labels
+file_browser.folder_label=Dossier
+file_browser.name_label=Nom
+file_browser.empty_folder=(Aucune entrée dans ce dossier)
+
+# Render/debug labels
+render.solid=Solide
+render.wireframe=Filaire
+debug.uv_dense=Densité UV :
+debug.uv_sparse=UV clairsemés :
+debug.missing_mats_fmt=Tapis manquants : {materials}
+
+# Menu text/help load status
+status.menu_text_load_failed_fmt=Échec du chargement du texte du menu : {error}
+status.menu_text_empty=Échec du chargement du texte du menu : le fichier n'a aucune ligne clé = valeur utilisable
+status.menu_text_loaded_fmt=Fichier texte du menu chargé : {path}
+status.help_text_load_failed_fmt=Échec du chargement du texte d'aide : {error}
+status.help_text_empty=Échec du chargement du texte d'aide : le fichier ne contient aucune ligne utilisable
+status.help_text_loaded_fmt=Fichier texte d'aide chargé : {path}
+
+# Scene load/save status
+status.load_cancelled=Chargement annulé
+status.load_cancelled_unsaved=Chargement annulé : la scène actuelle n'a pas été enregistrée
+status.load_failed_fmt=Échec du chargement : {error}
+status.load_failed_no_stg_entries=Échec du chargement : STG n'a aucune entrée d'objet
+status.load_failed_no_btg_reference=Échec du chargement : STG n'a pas de référence de tuile de base/objet BTG
+status.load_failed_resolve_base_fmt=Échec du chargement : impossible de résoudre le BTG de base STG '{base_path}'
+status.loaded_scene_summary_fmt=Chargé {name} | vtx={vtx} tri={tri} | STG btg={btg} modèle={model} proxy={proxy}
+status.save_failed_no_base_scene=Échec de l'enregistrement : aucune scène de base chargée
+status.save_failed_no_scene_stg=Échec de l'enregistrement : aucun fichier STG associé à la scène actuelle
+status.save_failed_no_target=Échec de l'enregistrement : aucun chemin cible fourni
+status.save_failed_fmt=Échec de l'enregistrement : {error}
+status.saved_stg_fmt=STG enregistré : {filename} | a écrit {count} objets de scène
+
+# Selection/object manipulation status
+status.select_model_first=Sélectionnez d'abord un modèle (réticule + clic gauche)
+status.no_model_selected_delete=Aucun modèle sélectionné à supprimer
+status.no_model_selected_copy=Aucun modèle sélectionné à copier
+status.no_model_under_crosshair=Aucun modèle sous le réticule
+status.clipboard_empty=Rien dans le presse-papiers - Ctrl+C pour copier d'abord un modèle sélectionné
+status.cycle_failed_no_scene=Échec du cycle : aucune scène chargée
+status.cycle_failed_catalog_empty=Échec du cycle : le catalogue d'objets est vide
+status.cycle_failed_category_empty=Échec du cycle : la catégorie sélectionnée n'a aucune entrée
+status.cycle_failed_load_fmt=Échec du cycle : impossible de charger '{object_path}'
+status.add_object_failed_no_scene=Échec de l'ajout d'un objet : aucune scène chargée
+status.add_object_failed_load_fmt=Échec de l'ajout d'un objet : impossible de charger '{object_path}'
+status.paste_failed_no_scene=Échec du collage : aucune scène chargée
+status.deleted_object_fmt=Supprimé [{kind}] {path}
+status.copied_object_fmt=Copié M{index} [{kind}] {path}
+status.selected_object_fmt=Modèle sélectionné M{index} [{kind}] {path}
+
+# View/render toggle status
+status.speed_scale_fmt=Échelle de vitesse : {value}
+status.no_angle_step_presets=Aucun préréglage de pas d'angle configuré
+status.model_angle_step_fmt=Pas d'angle du modèle : {step} deg (préréglé {index}/{total})
+status.selected_offsets_fmt=Décalages M{index} sélectionnés | lacet={yaw:.1f} deg pitch={pitch:.1f} deg roll={roll:.1f} deg
+status.selected_transform_fmt=Modèle sélectionné déplacé | dE={east:+.2f} dN={north:+.2f} dU={up:+.2f} m | dYaw={yaw:+.1f} deg
+status.reframed_tile=Tuile recadrée en vue
+status.reframe_no_tile=Aucune vignette chargée à recadrer
+status.help_overlay_fmt=Superposition d'aide : {state}
+status.debug_overlay_fmt=Superposition de débogage : {state}
+status.textured_view_fmt=Vue texturée : {state}
+status.render_mode_fmt=Mode de rendu : {mode}
+status.model_labels_fmt=Étiquettes du modèle : {state}
+status.mouse_capture_fmt=Capture de souris : {state}
+status.rotation_perf_logging_fmt=Journalisation des performances de rotation : {state}
+
+# Nudge/settings validation and apply status
+status.nudge_distance_empty=La distance de déplacement de l'objet ne peut pas être vide
+status.nudge_distance_invalid_fmt=Valeur de déplacement d'objet non valide : '{value}'
+status.nudge_distance_positive=La distance de déplacement de l'objet doit être > 0
+status.nudge_step_fmt=Pas de déplacement d'objet : {value} m
+status.nudge_repeat_fields_empty=Les champs de répétition du déplacement d'objet ne peuvent pas être vides
+status.nudge_repeat_invalid_fmt=Valeur de répétition du déplacement d'objet non valide : « {value} »
+status.nudge_repeat_invalid_range=Le délai de répétition doit être >= 0 et l'intervalle doit être > 0
+status.nudge_repeat_applied_fmt=Répétition du déplacement d'objet : délai = {delay:.2f}s intervalle = {interval:.2f}s
+status.missing_color_fields_empty=Les champs de couleur de matériau manquants ne peuvent pas être vides
+status.missing_color_invalid_fmt=Valeur de couleur du matériau manquant non valide : '{value}'
+status.missing_color_range=Les valeurs de couleur du matériau manquantes doivent être comprises entre 0 et 255
+status.missing_color_applied_fmt=Couleur du matériau manquant : RVB ({r}, {g}, {b})
+status.camera_view_fields_empty=Les champs de vue de la caméra ne peuvent pas être vides
+status.camera_view_invalid_fmt=Valeur de vue de la caméra non valide : « {value} »
+status.camera_view_invalid_range=La distance de la caméra doit être > 0,05 et la hauteur doit être >= 0,0
+status.camera_view_applied_fmt=Vue de démarrage de la caméra | distance={distance:.2f} hauteur={height:.2f}
+status.camera_clipping_fields_empty=Les champs de découpage de la caméra ne peuvent pas être vides
+status.camera_clipping_invalid_fmt=Valeur de découpage de la caméra non valide : « {value} »
+status.camera_near_positive=Le clip proche doit être > 0
+status.camera_far_non_negative=Le clip éloigné doit être >= 0 (utilisez 0 pour auto)
+status.camera_far_gt_near=Le clip éloigné doit être supérieur au clip proche
+status.camera_clipping_applied_fmt=Coupure de caméra | près={near}m loin={far}
+status.preview_panel_fields_empty=Les champs du panneau d'aperçu ne peuvent pas être vides
+status.preview_panel_invalid_fmt=Valeur du panneau d'aperçu non valide : "{value}"
+status.preview_panel_min_size=La largeur du panneau d'aperçu doit être >= 120 et la hauteur doit être >= 100
+status.preview_panel_xy_non_negative=Le panneau d'aperçu X/Y doit être >= 0
+status.preview_panel_applied_fmt=Panneau d'aperçu mis à jour | taille=({width}x{height}) pos=({x},{y})
+status.grid_fields_empty=Les champs des paramètres de grille ne peuvent pas être vides
+status.grid_invalid_fmt=Valeur de grille invalide : '{value}'
+status.grid_size_positive=La taille de la grille doit être > 0
+status.grid_spacing_positive=L'espacement de la grille doit être > 0
+status.grid_applied_fmt=Grille mise à jour | taille={size}m espacement={spacing}m z={z}m
+
+# File browser/custom scenery/add object status
+status.file_browser_failed_fmt=Échec du navigateur de fichiers : {error}
+status.directory_not_fg_root=Le répertoire sélectionné n'est pas une racine de données FlightGear (Textures + Matériaux requis)
+status.flightgear_location_set_fmt=Emplacement FlightGear défini : {path} | entrées du catalogue d'objets : {entries}
+status.custom_path_exists_fmt=Décors personnalisés déjà répertoriés : {path}
+status.custom_path_added_fmt=Chemin de scène personnalisé ajouté : {path} | entrées du catalogue d'objets : {entries}
+status.custom_path_removed_fmt=Chemin de scène personnalisé supprimé : {path} | entrées du catalogue d'objets : {entries}
+status.no_custom_paths_to_remove=Aucun chemin de scène personnalisé à supprimer
+status.catalog_refreshed_fmt=Catalogue d'objets actualisé | entrées : {entries}
+status.preview_render_mode_fmt=Mode de rendu d'aperçu : {mode}
+status.preview_object_fmt=Objet d'aperçu : {path}
+status.cycled_object_fmt=Cycle jusqu'à [{kind}] {path}
+status.added_object_fmt=Ajout de [{kind}] {path}
+status.pasted_object_fmt=Collé [{kind}] {path}
+status.object_nudge_mode_fmt=Mode de déplacement d'objet : {mode}
+status.load_select_stg=Échec du chargement : sélectionnez un fichier .stg
+status.save_as_no_scene_stg=Échec de l'enregistrement sous : aucun fichier STG associé à la scène actuelle
+status.reload_help_no_file=Échec du rechargement : aucun fichier texte d'aide sélectionné
+status.reload_help_fallback_fmt=Échec du rechargement du fichier sélectionné ; solution de repli chargée : {path}
+status.reload_help_failed=Échec du rechargement : impossible de charger le fichier texte d'aide sélectionné
+
+# Custom scenery panel
+custom_scenery.empty_paths=(Aucun chemin de scène personnalisé configuré)
+
+# Binding capture
+status.binding_update_cancelled=Mise à jour de liaison annulée
+status.bound_action_fmt=Lié {action_label} -> {binding}
+status.press_key_bind_fmt=Appuyez sur une touche pour lier « {action_label} »
+prompt.binding_capture_fmt=Appuyez sur une nouvelle touche pour '{action_label}' (ESC annule)

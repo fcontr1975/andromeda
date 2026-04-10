@@ -1,0 +1,48 @@
+# Texto de ayuda en pantalla de Andrómeda
+#
+# Notas de localización:
+# - Puedes reordenar las líneas libremente.
+#: se ignoran las líneas en blanco y las líneas que comienzan con #.
+#: los marcadores de posición vinculantes se admiten mediante {bind:action_name}.
+# Ejemplo: {bind:forward}
+
+Controles
+{bind:forward}: cámara +Z normal
+{bind:backward}: cámara -Z normal
+{bind:left}: izquierda
+{bind:right}: correcto
+{bind:up}: arriba
+{bind:down}: abajo
+{bind:speed_down}: reducir la velocidad
+{bind:speed_up}/plus: acelerar
+rueda del mouse arriba/abajo: acelerar/abajo
+{bind:model_yaw_down}/{bind:model_yaw_up}: modelo de guiñada -/+
+{bind:model_roll_down}/{bind:model_roll_up}: rollo de modelo -/+
+{bind:model_pitch_down}/{bind:model_pitch_up}: paso del modelo -/+
+{bind:toggle_labels}: etiquetas activadas/desactivadas
+{bind:toggle_perf_debug}: inicio/desconexión de rendimiento
+botón derecho del mouse: alternar captura del mouse (volar/no volar)
+{bind:toggle_mouse}: alternar captura del mouse (teclado)
+{bind:save_stg}: guardar STG
+{bind:copy_object}: copiar objeto seleccionado
+{bind:paste_object}: pegar objeto copiado
+{bind:delete_object}: eliminar objeto seleccionado
+{bind:cycle_object_prev}/{bind:cycle_object_next}: artículo del catálogo de ciclos
+Ctrl+repág / Ctrl+Avpág: paso de ángulo preestablecido -/+
+[: paso de empuje -0,25 m
+]: paso de empuje +0,25 m
+shift+[ / shift+]: paso de ángulo preestablecido -/+
+teclas de flecha: mover el objeto seleccionado X/Y
+Mayús+arriba/abajo: mueve el objeto seleccionado Z
+Mayús+izquierda/derecha: objeto seleccionado guiñada -/+
+Modo mouse (captura desactivada): la mira sigue al cursor del mouse
+Arrastrar hacia la izquierda (modo mouse): mueve el objeto seleccionado X/Y
+Mayús+arrastrar hacia la izquierda: mouse Y -> objeto Z, mouse X -> objeto guiñada
+espacio: menú agregar objeto
+menú > Ubicación del equipo de vuelo: establecer raíz de textura
+esc: menú
+.: mosaico de zoom/reencuadre
+pestaña: alternar estructura alámbrica
+h: ayuda para alternar superposición
+y: alternar vista texturizada
+t: superposición de depuración de texturas
