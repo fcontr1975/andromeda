@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """BTG validator and interactive viewer."""
+# Boy that name is outtadate baby lol! Enjoy anyway!
+
 
 from __future__ import annotations
 

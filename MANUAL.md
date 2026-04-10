@@ -166,12 +166,3 @@ Config file path:
 
 - `${XDG_CONFIG_HOME}/flightgear_btg_viewer.json`, or
 - `~/.config/flightgear_btg_viewer.json`
-
-## 11. Safe Release Testing Checklist
-
-1. Launch with `--opengl` and `--software` once each.
-2. Load a real `.stg` and verify static + model objects appear.
-3. Add, move, copy/paste, delete one object.
-4. Save and diff resulting `.stg`.
-5. Switch each UI language file and verify menu/help render.
-6. Reopen app and verify config persistence.
