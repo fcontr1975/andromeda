@@ -27,6 +27,12 @@ Install dependencies:
 python3 -m pip install pygame PyOpenGL
 ```
 
+Windows one-time setup:
+
+1. Double-click `install.bat` in the project folder.
+2. After it finishes, double-click `andromeda_launcher.bat` to run.
+3. Optional: drag and drop a `.stg` file onto `andromeda_launcher.bat`.
+
 ## Quick Start
 
 Launch with auto renderer:
