@@ -305,10 +305,18 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.mouse_edit_pending_dyaw_deg = 0.0
         self.fast_model_preview_pending = False
         self.fast_model_preview_deadline_ms = 0
+        self._shadow_candidate_cache_key = None
+        self._shadow_candidate_cache_indices: List[int] = []
         self.rotation_perf_stats: Dict[str, Dict[str, float]] = {}
         self.rotation_perf_last_report_ms = 0
         self.rotation_perf_report_interval_ms = 2500
         self.rotation_perf_debug_enabled = False
+        self.is_windows = os.name == "nt"
+        self.shadow_skip_rebuild_while_fast_preview = self.is_windows
+        self.shadow_rebuild_interval_ms = 160 if self.is_windows else 0
+        self.shadow_last_rebuild_ms = 0
+        self.render_perf_sample_every_n_frames = 10 if self.is_windows else 0
+        self.render_perf_frame_counter = 0
         self.last_browse_dir: str = ""
         self.help_text_file_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "onscreen_help_english.txt"))
         self.help_overlay_text_lines: List[str] = []
@@ -525,6 +533,10 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.scene_base_mesh: Optional[BTGMesh] = None
         self.scene_static_stg_meshes: List[BTGMesh] = []
         self.scene_static_merged_mesh: Optional[BTGMesh] = None
+        self.static_surface_cell_size_m: float = 96.0 if self.is_windows else 160.0
+        self.static_surface_triangles: List[Tuple[float, float, float, float, float, float, float, float, float, float, float, float, float, float]] = []
+        self.static_surface_grid_index: Dict[Tuple[int, int], List[int]] = {}
+        self.static_surface_grid_overflow: List[int] = []
         self.scene_model_instances: List[STGModelInstance] = []
         self.loaded_stg_entry_source_path: str = ""
         self.loaded_stg_model_entry_indices: Set[int] = set()

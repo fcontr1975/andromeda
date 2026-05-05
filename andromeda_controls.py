@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 import pygame
 
 from andromeda_backend import (
+    BTGMesh,
     KeyBinding,
     ObjectCatalogEntry,
     STGModelInstance,
@@ -25,7 +26,75 @@ if TYPE_CHECKING:
 
 
 class ControlsMixin:
-    
+    def _fast_remove_model_instance_from_mesh(self: "BTGDisplayApp", removed_index: int, removed: STGModelInstance) -> bool:
+        mesh = self.mesh
+        if mesh is None:
+            return False
+
+        v_start = int(removed.mesh_vertex_start)
+        v_count = int(removed.mesh_vertex_count)
+        f_start = int(removed.mesh_face_start)
+        f_count = int(removed.mesh_face_count)
+        if v_start < 0 or v_count <= 0 or f_start < 0 or f_count <= 0:
+            return False
+
+        v_end = v_start + v_count
+        f_end = f_start + f_count
+        if v_end > len(mesh.vertices) or f_end > len(mesh.faces):
+            return False
+
+        t0 = time.perf_counter()
+
+        new_vertices = list(mesh.vertices[:v_start])
+        new_vertices.extend(mesh.vertices[v_end:])
+
+        adjusted_faces: List[Tuple[int, int, int]] = []
+        for a, b, c in list(mesh.faces[:f_start]) + list(mesh.faces[f_end:]):
+            if a >= v_end:
+                a -= v_count
+            if b >= v_end:
+                b -= v_count
+            if c >= v_end:
+                c -= v_count
+            adjusted_faces.append((a, b, c))
+
+        new_face_texcoords = list(mesh.face_texcoords[:f_start]) + list(mesh.face_texcoords[f_end:])
+        new_face_materials = list(mesh.face_materials[:f_start]) + list(mesh.face_materials[f_end:])
+        new_face_colors = list(mesh.face_colors[:f_start]) + list(mesh.face_colors[f_end:])
+
+        if not (
+            len(adjusted_faces) == len(new_face_texcoords)
+            and len(adjusted_faces) == len(new_face_materials)
+            and len(adjusted_faces) == len(new_face_colors)
+        ):
+            return False
+
+        for instance in self.scene_model_instances[removed_index:]:
+            if instance.mesh_vertex_start >= 0:
+                instance.mesh_vertex_start -= v_count
+            if instance.mesh_face_start >= 0:
+                instance.mesh_face_start -= f_count
+
+        self.mesh = BTGMesh(
+            vertices=new_vertices,
+            faces=adjusted_faces,
+            texcoords=list(mesh.texcoords),
+            face_texcoords=new_face_texcoords,
+            face_materials=new_face_materials,
+            face_colors=new_face_colors,
+            center_ecef=mesh.center_ecef,
+            radius=mesh.radius,
+        )
+        self.mesh_bounds = self._mesh_bounds(self.mesh)
+        self._build_face_data(self.mesh)
+        self.shadow_last_rebuild_ms = 0
+        self._shadow_pose = None
+
+        t1 = time.perf_counter()
+        self._record_rotation_perf("delete.fast.total", (t1 - t0) * 1000.0)
+        self._maybe_report_rotation_perf()
+        return True
+
 
     def _format_angle_step_deg(self: "BTGDisplayApp", value: float) -> str:
         if abs(value) < 1.0:
@@ -631,8 +700,13 @@ class ControlsMixin:
                 self.crosshair_hover_model_index -= 1
 
         self.selected_model_instance_index = None
-        if not self._rebuild_scene_from_cache(keep_camera=True):
-            self._reload_current_scene()
+        if not self._fast_remove_model_instance_from_mesh(idx, removed):
+            t0 = time.perf_counter()
+            if not self._rebuild_scene_from_cache(keep_camera=True, perf_tag="delete_fallback"):
+                self._reload_current_scene()
+            t1 = time.perf_counter()
+            self._record_rotation_perf("delete.fallback.total", (t1 - t0) * 1000.0)
+            self._maybe_report_rotation_perf()
 
         kind = "ac" if removed.is_ac_model else "model"
         self._set_status_t(
@@ -820,6 +894,8 @@ class ControlsMixin:
             return
         self.fast_model_preview_pending = False
         self.fast_model_preview_deadline_ms = 0
+        self.shadow_last_rebuild_ms = 0
+        self._shadow_pose = None
 
         t0 = time.perf_counter()
         if self._rebuild_model_textured_batches_only(selected_idx=self.selected_model_instance_index):

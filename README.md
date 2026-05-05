@@ -103,6 +103,14 @@ Select language/help files from the in-app menu.
 	on the terrain to make placement easier.
 - Label chips and crosshair-hover labels help identify dense object scenes.
 
+## Recent Improvements
+
+- Windows path picker update: when browsing upward to filesystem root, drive letters are now listed so you can switch drives while selecting FlightGear paths.
+- Windows editing performance update: object move/rotate operations now include faster preview behavior, shadow rebuild throttling during active edits, and render-stage timing metrics.
+- Shadow sampling acceleration: static-scene terrain now uses a spatial index with adaptive cell sizing and cached footprint candidates for faster projected-shadow updates.
+- STG save dedupe fix: save now skips writing duplicate object entries at the same object path and position, preventing repeated duplication across saves.
+- Object deletion acceleration: delete now attempts a fast in-memory mesh patch path before falling back to a full scene rebuild.
+
 ## Config File
 
 Andromeda persists settings in:

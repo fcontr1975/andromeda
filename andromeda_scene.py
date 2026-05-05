@@ -7,6 +7,7 @@ scene mesh, persisting viewer config and rebuilding the scene from cache.
 
 from __future__ import annotations
 
+import math
 import os
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
@@ -38,6 +39,96 @@ if TYPE_CHECKING:
 
 
 class SceneMixin:
+    def _rebuild_static_surface_index(self: "BTGDisplayApp") -> None:
+        mesh = self.scene_static_merged_mesh
+        self.static_surface_triangles = []
+        self.static_surface_grid_index = {}
+        self.static_surface_grid_overflow = []
+
+        if mesh is None or not mesh.vertices or not mesh.faces:
+            return
+
+        default_cell_size = max(1.0, float(getattr(self, "static_surface_cell_size_m", 128.0)))
+        xs = [v[0] for v in mesh.vertices]
+        ys = [v[1] for v in mesh.vertices]
+        span_x = max(1.0, max(xs) - min(xs))
+        span_y = max(1.0, max(ys) - min(ys))
+        area_xy = max(1.0, span_x * span_y)
+        tri_count_est = max(1, len(mesh.faces))
+        tri_density = tri_count_est / area_xy
+        target_tris_per_cell = 22.0 if getattr(self, "is_windows", False) else 36.0
+        if tri_density > 1e-12:
+            adaptive_cell = math.sqrt(target_tris_per_cell / tri_density)
+        else:
+            adaptive_cell = default_cell_size
+        min_cell = 28.0 if getattr(self, "is_windows", False) else 48.0
+        max_cell = 192.0 if getattr(self, "is_windows", False) else 320.0
+        cell_size = max(min_cell, min(max_cell, adaptive_cell))
+        self.static_surface_cell_size_m = float(cell_size)
+        inv_cell = 1.0 / cell_size
+        max_cells_per_axis = 72 if getattr(self, "is_windows", False) else 96
+
+        verts = mesh.vertices
+        eps = 1e-9
+        t0 = time.perf_counter()
+        inserted = 0
+
+        for ia, ib, ic in mesh.faces:
+            ax, ay, az = verts[ia]
+            bx, by, bz = verts[ib]
+            cx, cy, cz = verts[ic]
+
+            min_x = min(ax, bx, cx)
+            max_x = max(ax, bx, cx)
+            min_y = min(ay, by, cy)
+            max_y = max(ay, by, cy)
+            den = ((by - cy) * (ax - cx)) + ((cx - bx) * (ay - cy))
+            if abs(den) <= eps:
+                continue
+
+            tri_index = len(self.static_surface_triangles)
+            self.static_surface_triangles.append(
+                (
+                    ax,
+                    ay,
+                    az,
+                    bx,
+                    by,
+                    bz,
+                    cx,
+                    cy,
+                    cz,
+                    min_x,
+                    max_x,
+                    min_y,
+                    max_y,
+                    den,
+                )
+            )
+
+            ix0 = int(min_x * inv_cell)
+            ix1 = int(max_x * inv_cell)
+            iy0 = int(min_y * inv_cell)
+            iy1 = int(max_y * inv_cell)
+            span_x = ix1 - ix0 + 1
+            span_y = iy1 - iy0 + 1
+            if span_x > max_cells_per_axis or span_y > max_cells_per_axis:
+                self.static_surface_grid_overflow.append(tri_index)
+                continue
+
+            for ix in range(ix0, ix1 + 1):
+                for iy in range(iy0, iy1 + 1):
+                    self.static_surface_grid_index.setdefault((ix, iy), []).append(tri_index)
+                    inserted += 1
+
+        if self.rotation_perf_debug_enabled:
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            self._record_rotation_perf("surface_index.build", elapsed_ms)
+            self._record_rotation_perf("surface_index.triangles", float(len(self.static_surface_triangles)))
+            self._record_rotation_perf("surface_index.cells", float(len(self.static_surface_grid_index)))
+            self._record_rotation_perf("surface_index.inserted", float(inserted))
+            self._record_rotation_perf("surface_index.cell_size", float(cell_size))
+
     # ------------------------------------------------------------------
     # Status
     # ------------------------------------------------------------------
@@ -143,6 +234,9 @@ class SceneMixin:
         self.scene_base_mesh = None
         self.scene_static_stg_meshes = []
         self.scene_static_merged_mesh = None
+        self.static_surface_triangles = []
+        self.static_surface_grid_index = {}
+        self.static_surface_grid_overflow = []
         self.scene_model_instances = []
         self.loaded_stg_entry_source_path = ""
         self.loaded_stg_model_entry_indices = set()
@@ -233,6 +327,7 @@ class SceneMixin:
         self.scene_base_mesh = mesh
         self.scene_static_stg_meshes = stg_static_meshes
         self.scene_static_merged_mesh = merge_meshes(mesh, self.scene_static_stg_meshes)
+        self._rebuild_static_surface_index()
         self.scene_model_instances = stg_model_instances
         associated_stg_path = stg_associated_path(path)
         if os.path.isfile(associated_stg_path):
@@ -333,6 +428,7 @@ class SceneMixin:
         self.scene_base_mesh = mesh
         self.scene_static_stg_meshes = stg_static_meshes
         self.scene_static_merged_mesh = merge_meshes(mesh, self.scene_static_stg_meshes)
+        self._rebuild_static_surface_index()
         self.scene_model_instances = stg_model_instances
         self.loaded_stg_entry_source_path = os.path.abspath(stg_path)
         self.loaded_stg_model_entry_indices = {
@@ -436,6 +532,38 @@ class SceneMixin:
                 f"{elev_m:.3f} {heading:.2f} {pitch:.2f} {roll:.2f}\n"
             )
 
+        def _object_position_signature(stg_line: str) -> Optional[Tuple[str, str, str, str, str]]:
+            stripped = stg_line.strip()
+            if not stripped or stripped.startswith("#"):
+                return None
+            parts = stripped.split()
+            if len(parts) < 5:
+                return None
+
+            directive = parts[0].upper()
+            if not directive.startswith("OBJECT"):
+                return None
+
+            object_path = parts[1]
+            ext = os.path.splitext(object_path.lower())[1]
+            if ext in {".btg", ".gz"}:
+                return None
+
+            try:
+                lon = float(parts[2])
+                lat = float(parts[3])
+                elev = float(parts[4])
+            except Exception:
+                return None
+
+            return (
+                directive,
+                object_path.replace("\\", "/").lower(),
+                f"{lon:.8f}",
+                f"{lat:.8f}",
+                f"{elev:.3f}",
+            )
+
         replacement_by_entry_index: Dict[int, str] = {}
         append_lines: List[str] = []
         for instance in self.scene_model_instances:
@@ -489,11 +617,25 @@ class SceneMixin:
                 rewritten.append(line)
             entry_index += 1
 
-        for idx in sorted(replacement_by_entry_index):
-            rewritten.append(replacement_by_entry_index[idx])
-        rewritten.extend(append_lines)
+        existing_signatures: Set[Tuple[str, str, str, str, str]] = set()
+        for existing_line in rewritten:
+            signature = _object_position_signature(existing_line)
+            if signature is not None:
+                existing_signatures.add(signature)
 
-        written_models = replaced_count + len(replacement_by_entry_index) + len(append_lines)
+        appended_unique_count = 0
+        pending_append_lines: List[str] = [replacement_by_entry_index[idx] for idx in sorted(replacement_by_entry_index)]
+        pending_append_lines.extend(append_lines)
+        for candidate_line in pending_append_lines:
+            signature = _object_position_signature(candidate_line)
+            if signature is not None and signature in existing_signatures:
+                continue
+            rewritten.append(candidate_line)
+            if signature is not None:
+                existing_signatures.add(signature)
+            appended_unique_count += 1
+
+        written_models = replaced_count + appended_unique_count
 
         try:
             parent_dir = os.path.dirname(target_path)

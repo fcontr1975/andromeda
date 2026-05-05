@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class MenuMixin:
+    _WINDOWS_DRIVES_ROOT = "::windows-drives-root::"
+
     def _menu_t(self: "BTGDisplayApp", key: str, default: str) -> str:
         value = self.menu_text_map.get(key)
         if isinstance(value, str) and value.strip():
@@ -943,6 +945,28 @@ class MenuMixin:
                 return f"{base}.stg"
         return "scene.stg"
 
+    def _file_browser_windows_drive_list(self: "BTGDisplayApp") -> List[str]:
+        if os.name != "nt":
+            return []
+        drives: List[str] = []
+        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            candidate = f"{letter}:\\"
+            if os.path.exists(candidate):
+                drives.append(candidate)
+        return drives
+
+    def _file_browser_parent_directory(self: "BTGDisplayApp", directory: str) -> Optional[str]:
+        if os.name == "nt":
+            normalized = os.path.abspath(directory)
+            drive, tail = os.path.splitdrive(normalized)
+            if drive and tail in {"\\", "/"}:
+                return self._WINDOWS_DRIVES_ROOT
+
+        parent = os.path.dirname(directory)
+        if parent and parent != directory:
+            return parent
+        return None
+
     def _open_file_browser(
         self: "BTGDisplayApp",
         mode: str,
@@ -981,6 +1005,25 @@ class MenuMixin:
                 self.file_browser_index = max(0, min(self.file_browser_index, len(entries) - 1))
             return
 
+        if os.name == "nt" and self.file_browser_dir == self._WINDOWS_DRIVES_ROOT:
+            entries: List[Dict[str, object]] = []
+            for drive in self._file_browser_windows_drive_list():
+                entries.append(
+                    {
+                        "name": f"[DRV] {drive}",
+                        "path": drive,
+                        "is_dir": True,
+                        "color": (120, 215, 255),
+                    }
+                )
+
+            self.file_browser_entries = entries
+            if not entries:
+                self.file_browser_index = 0
+            else:
+                self.file_browser_index = max(0, min(self.file_browser_index, len(entries) - 1))
+            return
+
         directory = os.path.abspath(self.file_browser_dir or os.getcwd())
         if not os.path.isdir(directory):
             directory = os.getcwd()
@@ -998,8 +1041,8 @@ class MenuMixin:
                 }
             )
 
-            parent = os.path.dirname(directory.rstrip(os.sep))
-            if parent and parent != directory:
+            parent = self._file_browser_parent_directory(directory)
+            if parent:
                 entries.append(
                     {
                         "name": "[..] Parent Folder",
@@ -1062,8 +1105,8 @@ class MenuMixin:
                 }
             )
 
-        parent = os.path.dirname(directory)
-        if parent and parent != directory:
+        parent = self._file_browser_parent_directory(directory)
+        if parent:
             entries.append(
                 {
                     "name": "[..] Parent folder",
@@ -1269,7 +1312,10 @@ class MenuMixin:
             return
 
         if is_dir:
-            self.file_browser_dir = os.path.abspath(entry_path)
+            if os.name == "nt" and entry_path == self._WINDOWS_DRIVES_ROOT:
+                self.file_browser_dir = self._WINDOWS_DRIVES_ROOT
+            else:
+                self.file_browser_dir = os.path.abspath(entry_path)
             self.file_browser_index = 0
             self._refresh_file_browser_entries()
             return
@@ -2313,7 +2359,10 @@ class MenuMixin:
             mode_surf = self.font_small.render(mode_text, True, (180, 210, 190))
             self.screen.blit(mode_surf, (panel_x + 18, panel_y + 12))
 
-            dir_text = self.file_browser_dir
+            if os.name == "nt" and self.file_browser_dir == self._WINDOWS_DRIVES_ROOT:
+                dir_text = "Computer (All Drives)"
+            else:
+                dir_text = self.file_browser_dir
             max_dir_chars = max(16, (panel_w - 36) // 8)
             if len(dir_text) > max_dir_chars:
                 dir_text = "..." + dir_text[-(max_dir_chars - 3):]
@@ -2832,7 +2881,10 @@ class MenuMixin:
                 mode_text = self._menu_t("file_browser.mode_default", "File browser")
             self._gl_draw_text(mode_text, panel_x + 18, panel_y + 12, (180, 210, 190), self.font_small)
 
-            dir_text = self.file_browser_dir
+            if os.name == "nt" and self.file_browser_dir == self._WINDOWS_DRIVES_ROOT:
+                dir_text = "Computer (All Drives)"
+            else:
+                dir_text = self.file_browser_dir
             max_dir_chars = max(16, (panel_w - 36) // 8)
             if len(dir_text) > max_dir_chars:
                 dir_text = "..." + dir_text[-(max_dir_chars - 3):]

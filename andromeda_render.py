@@ -8,6 +8,7 @@ import math
 import os
 import re
 import struct
+import time
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import pygame
@@ -2423,9 +2424,74 @@ class RenderMixin:
         self._shadow_anchor = None
         self._shadow_pose = None
         self._shadow_ground_z = None
+        self._shadow_candidate_cache_key = None
+        self._shadow_candidate_cache_indices = []
+
+    def _shadow_candidate_indices_for_footprint(
+        self: "BTGDisplayApp",
+        min_x: float,
+        min_y: float,
+        max_x: float,
+        max_y: float,
+    ) -> List[int]:
+        triangles = getattr(self, "static_surface_triangles", None)
+        if not triangles:
+            return []
+
+        cell_size = max(1.0, float(getattr(self, "static_surface_cell_size_m", 128.0)))
+        inv_cell = 1.0 / cell_size
+        grid = getattr(self, "static_surface_grid_index", {})
+        overflow = getattr(self, "static_surface_grid_overflow", [])
+        radius = 2 if bool(getattr(self, "fast_model_preview_pending", False)) else 1
+
+        ix0 = int(math.floor(min_x * inv_cell))
+        iy0 = int(math.floor(min_y * inv_cell))
+        ix1 = int(math.floor(max_x * inv_cell))
+        iy1 = int(math.floor(max_y * inv_cell))
+
+        cache_key = (
+            id(getattr(self, "scene_static_merged_mesh", None)),
+            ix0,
+            iy0,
+            ix1,
+            iy1,
+            radius,
+            len(overflow),
+        )
+        if getattr(self, "_shadow_candidate_cache_key", None) == cache_key:
+            return list(getattr(self, "_shadow_candidate_cache_indices", []))
+
+        t0 = time.perf_counter()
+        candidates: List[int] = []
+        seen: set = set()
+        for ix in range(ix0 - radius, ix1 + radius + 1):
+            for iy in range(iy0 - radius, iy1 + radius + 1):
+                bucket = grid.get((ix, iy))
+                if not bucket:
+                    continue
+                for tri_idx in bucket:
+                    if tri_idx in seen:
+                        continue
+                    seen.add(tri_idx)
+                    candidates.append(tri_idx)
+
+        if overflow:
+            for tri_idx in overflow:
+                if tri_idx in seen:
+                    continue
+                seen.add(tri_idx)
+                candidates.append(tri_idx)
+
+        self._shadow_candidate_cache_key = cache_key
+        self._shadow_candidate_cache_indices = list(candidates)
+        if self.rotation_perf_debug_enabled:
+            self._record_rotation_perf("shadow.candidate_build", (time.perf_counter() - t0) * 1000.0)
+            self._record_rotation_perf("shadow.candidate_count", float(len(candidates)))
+        return candidates
 
     def _build_selection_shadow_texture(self: "BTGDisplayApp") -> None:
         GL = self.GL
+        t0 = time.perf_counter()
         idx = self.selected_model_instance_index
         mesh = self.mesh
         if idx is None or mesh is None or not mesh.faces:
@@ -2525,7 +2591,13 @@ class RenderMixin:
             float(getattr(inst, "offset_pitch_deg", 0.0)),
             float(getattr(inst, "offset_roll_deg", 0.0)),
         )
+        t1 = time.perf_counter()
         self._shadow_ground_z = self._selection_shadow_ground_z(min_x, min_y, max_x, max_y, self._shadow_anchor[2])
+        t2 = time.perf_counter()
+        if self.rotation_perf_debug_enabled:
+            self._record_rotation_perf("shadow.build_texture", (t1 - t0) * 1000.0)
+            self._record_rotation_perf("shadow.sample_ground", (t2 - t1) * 1000.0)
+            self._record_rotation_perf("shadow.total", (t2 - t0) * 1000.0)
 
     def _selection_shadow_ground_z(
         self: "BTGDisplayApp",
@@ -2550,9 +2622,11 @@ class RenderMixin:
             (min_x, cy),
         ]
 
+        candidate_indices = self._shadow_candidate_indices_for_footprint(min_x, min_y, max_x, max_y)
+
         best_z: Optional[float] = None
         for sx, sy in sample_points:
-            hit_z = self._first_surface_z_below(sx, sy, origin_z)
+            hit_z = self._first_surface_z_below(sx, sy, origin_z, candidate_indices=candidate_indices)
             if hit_z is None:
                 continue
             if best_z is None or hit_z > best_z:
@@ -2564,29 +2638,65 @@ class RenderMixin:
         x: float,
         y: float,
         origin_z: float,
+        candidate_indices: Optional[List[int]] = None,
     ) -> Optional[float]:
         """Return the highest triangle surface z below (x, y, origin_z)."""
-        static_mesh = self.scene_static_merged_mesh
-        if static_mesh is None or not static_mesh.vertices or not static_mesh.faces:
+        triangles = getattr(self, "static_surface_triangles", None)
+        if not triangles:
             return None
 
-        verts = static_mesh.vertices
+        if candidate_indices is None:
+            cell_size = max(1.0, float(getattr(self, "static_surface_cell_size_m", 128.0)))
+            inv_cell = 1.0 / cell_size
+            ix = int(math.floor(x * inv_cell))
+            iy = int(math.floor(y * inv_cell))
+            grid = getattr(self, "static_surface_grid_index", {})
+            overflow = getattr(self, "static_surface_grid_overflow", [])
+
+            candidate_indices = list(grid.get((ix, iy), []))
+            if overflow:
+                candidate_indices.extend(overflow)
+
+            # If the point lies near a cell boundary or sparse area, include 1-ring neighbors.
+            if not candidate_indices:
+                for nx in (ix - 1, ix, ix + 1):
+                    for ny in (iy - 1, iy, iy + 1):
+                        neighbor = grid.get((nx, ny))
+                        if neighbor:
+                            candidate_indices.extend(neighbor)
+                if overflow:
+                    candidate_indices.extend(overflow)
+
+        if not candidate_indices:
+            return None
+
         eps = 1e-7
         best_z: Optional[float] = None
+        seen: set = set()
 
-        for ia, ib, ic in static_mesh.faces:
-            ax, ay, az = verts[ia]
-            bx, by, bz = verts[ib]
-            cx, cy, cz = verts[ic]
+        for tri_idx in candidate_indices:
+            if tri_idx in seen:
+                continue
+            seen.add(tri_idx)
+            (
+                ax,
+                ay,
+                az,
+                bx,
+                by,
+                bz,
+                cx,
+                cy,
+                cz,
+                min_tx,
+                max_tx,
+                min_ty,
+                max_ty,
+                den,
+            ) = triangles[tri_idx]
 
-            min_tx = min(ax, bx, cx)
-            max_tx = max(ax, bx, cx)
-            min_ty = min(ay, by, cy)
-            max_ty = max(ay, by, cy)
             if x < (min_tx - eps) or x > (max_tx + eps) or y < (min_ty - eps) or y > (max_ty + eps):
                 continue
-
-            den = ((by - cy) * (ax - cx)) + ((cx - bx) * (ay - cy))
             if abs(den) <= eps:
                 continue
 
@@ -2628,7 +2738,20 @@ class RenderMixin:
 
         # Rebuild whenever the selection or the object's position has changed.
         if getattr(self, "_shadow_instance_idx", None) != idx or getattr(self, "_shadow_pose", None) != cur_pose:
-            self._build_selection_shadow_texture()
+            now_ms = int(pygame.time.get_ticks())
+            rebuild_interval = int(getattr(self, "shadow_rebuild_interval_ms", 0))
+            throttle_rebuild = (
+                bool(getattr(self, "shadow_skip_rebuild_while_fast_preview", False))
+                and bool(getattr(self, "fast_model_preview_pending", False))
+                and rebuild_interval > 0
+                and getattr(self, "_shadow_tex_id", None) is not None
+                and (now_ms - int(getattr(self, "shadow_last_rebuild_ms", 0))) < rebuild_interval
+            )
+            if not throttle_rebuild:
+                self._build_selection_shadow_texture()
+                self.shadow_last_rebuild_ms = now_ms
+            elif self.rotation_perf_debug_enabled:
+                self._record_rotation_perf("shadow.rebuild_skipped", 0.0)
 
         bounds = getattr(self, "_shadow_world_bounds", None)
         if bounds is None:
@@ -2707,6 +2830,17 @@ class RenderMixin:
         self.screen.blit(overlay, (0, 0))
 
     def render(self: "BTGDisplayApp") -> None:
+        perf_enabled = bool(getattr(self, "rotation_perf_debug_enabled", False))
+        should_sample_render = False
+        if perf_enabled:
+            sample_every = int(getattr(self, "render_perf_sample_every_n_frames", 0))
+            if sample_every > 1:
+                self.render_perf_frame_counter = int(getattr(self, "render_perf_frame_counter", 0)) + 1
+                should_sample_render = (self.render_perf_frame_counter % sample_every) == 0
+            else:
+                should_sample_render = True
+
+        frame_t0 = time.perf_counter() if should_sample_render else 0.0
         if self.opengl_enabled:
             GL = self.GL
             GLU = self.GLU
@@ -2738,9 +2872,13 @@ class RenderMixin:
             GL.glRotatef(-self.yaw, 0.0, 0.0, 1.0)
             GL.glTranslatef(-self.camera_pos[0], -self.camera_pos[1], -self.camera_pos[2])
 
+            t_grid0 = time.perf_counter() if should_sample_render else 0.0
             self._draw_xy_grid()
+            t_grid1 = time.perf_counter() if should_sample_render else 0.0
             self._render_mesh()
+            t_mesh1 = time.perf_counter() if should_sample_render else 0.0
             self._draw_selection_shadow()
+            t_shadow1 = time.perf_counter() if should_sample_render else 0.0
             self.frame_projected_model_labels = self._collect_projected_model_labels()
             self._draw_model_labels()
             self._draw_crosshair()
@@ -2751,13 +2889,27 @@ class RenderMixin:
                 self._draw_menu()
             self._draw_status()
             self._draw_add_object_preview()
+            t_ui1 = time.perf_counter() if should_sample_render else 0.0
             pygame.display.flip()
+            if should_sample_render:
+                t_end = time.perf_counter()
+                self._record_rotation_perf("render.grid", (t_grid1 - t_grid0) * 1000.0)
+                self._record_rotation_perf("render.mesh", (t_mesh1 - t_grid1) * 1000.0)
+                self._record_rotation_perf("render.shadow", (t_shadow1 - t_mesh1) * 1000.0)
+                self._record_rotation_perf("render.ui", (t_ui1 - t_shadow1) * 1000.0)
+                self._record_rotation_perf("render.flip", (t_end - t_ui1) * 1000.0)
+                self._record_rotation_perf("render.total", (t_end - frame_t0) * 1000.0)
+                self._maybe_report_rotation_perf()
             return
 
         draw_gradient_background(self.screen)
+        t_grid0 = time.perf_counter() if should_sample_render else 0.0
         self._draw_xy_grid()
+        t_grid1 = time.perf_counter() if should_sample_render else 0.0
         self._render_mesh()
+        t_mesh1 = time.perf_counter() if should_sample_render else 0.0
         self._draw_selection_shadow()
+        t_shadow1 = time.perf_counter() if should_sample_render else 0.0
         self.frame_projected_model_labels = self._collect_projected_model_labels()
         self._draw_model_labels()
         self._draw_crosshair()
@@ -2770,4 +2922,14 @@ class RenderMixin:
 
         self._draw_status()
         self._draw_add_object_preview()
+        t_ui1 = time.perf_counter() if should_sample_render else 0.0
         pygame.display.flip()
+        if should_sample_render:
+            t_end = time.perf_counter()
+            self._record_rotation_perf("render.grid", (t_grid1 - t_grid0) * 1000.0)
+            self._record_rotation_perf("render.mesh", (t_mesh1 - t_grid1) * 1000.0)
+            self._record_rotation_perf("render.shadow", (t_shadow1 - t_mesh1) * 1000.0)
+            self._record_rotation_perf("render.ui", (t_ui1 - t_shadow1) * 1000.0)
+            self._record_rotation_perf("render.flip", (t_end - t_ui1) * 1000.0)
+            self._record_rotation_perf("render.total", (t_end - frame_t0) * 1000.0)
+            self._maybe_report_rotation_perf()
