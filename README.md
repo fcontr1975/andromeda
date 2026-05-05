@@ -9,6 +9,8 @@ It is designed for editing `.stg` tiles with immediate visual feedback, object c
 - Open and inspect `.stg`, `.btg`, and `.btg.gz` scenes.
 - Add objects from FlightGear `Objects/` and `Models/` catalogs.
 - Select, move, rotate, copy, paste, delete, and cycle scene objects.
+- Mouse edit mode for fast drag-based object transforms.
+- Selected-object terrain shadow footprint (OpenGL path).
 - Save back to STG while preserving non-object lines.
 - Software and OpenGL render paths.
 - Localized UI/help text files (English, Spanish, French, German).
@@ -62,6 +64,9 @@ python3 andromeda.py /path/to/tile.stg --material-map /path/to/material_map.json
 - Arrow keys: move selected object X/Y
 - `Shift+Up/Down`: move selected object Z
 - `Shift+Left/Right`: selected object yaw
+- Mouse capture OFF: crosshair follows mouse cursor
+- Left drag (mouse capture OFF): move selected object X/Y
+- `Shift` + left drag: mouse Y moves object Z, mouse X yaws object
 - `H`: help overlay
 - `Y`: textured view toggle
 - `Tab`: wireframe toggle
@@ -85,6 +90,12 @@ Help overlay files:
 - `onscreen_help_german.txt`
 
 Select language/help files from the in-app menu.
+
+## Selection Aids
+
+- In OpenGL mode, the selected object can display a projected footprint shadow
+	on the terrain to make placement easier.
+- Label chips and crosshair-hover labels help identify dense object scenes.
 
 ## Config File
 

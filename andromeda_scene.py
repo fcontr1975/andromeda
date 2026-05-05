@@ -54,6 +54,10 @@ class SceneMixin:
             self._purge_gl_text_cache()
         except Exception:
             pass
+        try:
+            self._clear_selection_shadow()
+        except Exception:
+            pass
         if not self.texture_id_by_path:
             self.texture_has_alpha_by_id.clear()
             self.texture_alpha_by_path.clear()

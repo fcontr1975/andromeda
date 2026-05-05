@@ -2406,6 +2406,306 @@ class RenderMixin:
             self._gl_draw_text(text, base_x, base_y + i * line_h, color, self.font_small)
         self._gl_end_2d()
 
+    # ------------------------------------------------------------------
+    # Selection shadow — bitmap footprint projected onto terrain floor
+    # ------------------------------------------------------------------
+
+    def _clear_selection_shadow(self: "BTGDisplayApp") -> None:
+        tex_id = getattr(self, "_shadow_tex_id", None)
+        if tex_id is not None and self.opengl_enabled and self.GL is not None:
+            try:
+                self.GL.glDeleteTextures([int(tex_id)])
+            except Exception:
+                pass
+        self._shadow_tex_id = None
+        self._shadow_world_bounds = None
+        self._shadow_instance_idx = None
+        self._shadow_anchor = None
+        self._shadow_pose = None
+        self._shadow_ground_z = None
+
+    def _build_selection_shadow_texture(self: "BTGDisplayApp") -> None:
+        GL = self.GL
+        idx = self.selected_model_instance_index
+        mesh = self.mesh
+        if idx is None or mesh is None or not mesh.faces:
+            self._clear_selection_shadow()
+            return
+        if not (0 <= idx < len(self.scene_model_instances)):
+            self._clear_selection_shadow()
+            return
+
+        inst = self.scene_model_instances[idx]
+        if inst.mesh_face_start < 0 or inst.mesh_face_count <= 0:
+            self._clear_selection_shadow()
+            return
+
+        end_fi = min(inst.mesh_face_start + inst.mesh_face_count, len(mesh.faces))
+        vert_set: set = set()
+        for fi in range(inst.mesh_face_start, end_fi):
+            a, b, c = mesh.faces[fi]
+            vert_set.add(a)
+            vert_set.add(b)
+            vert_set.add(c)
+        if not vert_set:
+            self._clear_selection_shadow()
+            return
+
+        verts = mesh.vertices
+        xs = [verts[v][0] for v in vert_set]
+        ys = [verts[v][1] for v in vert_set]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+
+        # Compute padding so even near-flat objects get a visible footprint.
+        span = max(max_x - min_x, max_y - min_y, 0.5)
+        pad = span * 0.12
+        min_x -= pad
+        max_x += pad
+        min_y -= pad
+        max_y += pad
+        span_x = max_x - min_x
+        span_y = max_y - min_y
+
+        TEX_SIZE = 512
+        surf = pygame.Surface((TEX_SIZE, TEX_SIZE), pygame.SRCALPHA)
+        surf.fill((0, 0, 0, 0))
+
+        inv_sx = (TEX_SIZE - 1) / span_x if span_x > 1e-6 else 1.0
+        inv_sy = (TEX_SIZE - 1) / span_y if span_y > 1e-6 else 1.0
+        shadow_color = (0, 0, 0, 140)
+
+        for fi in range(inst.mesh_face_start, end_fi):
+            a, b, c = mesh.faces[fi]
+            pa = (int((verts[a][0] - min_x) * inv_sx), int((verts[a][1] - min_y) * inv_sy))
+            pb = (int((verts[b][0] - min_x) * inv_sx), int((verts[b][1] - min_y) * inv_sy))
+            pc = (int((verts[c][0] - min_x) * inv_sx), int((verts[c][1] - min_y) * inv_sy))
+            pygame.draw.polygon(surf, shadow_color, [pa, pb, pc])
+
+        # Clean up any previously allocated GL texture.
+        old_tex = getattr(self, "_shadow_tex_id", None)
+        if old_tex is not None and GL is not None:
+            try:
+                GL.glDeleteTextures([int(old_tex)])
+            except Exception:
+                pass
+        self._shadow_tex_id = None
+
+        if GL is not None:
+            # This texture is procedural in world XY space already, so avoid
+            # implicit vertical flipping to preserve handedness.
+            rgba = pygame.image.tostring(surf, "RGBA", False)
+            tex_id = GL.glGenTextures(1)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, tex_id)
+            GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+            GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+            if hasattr(GL, "GL_CLAMP_TO_EDGE"):
+                GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+                GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+            GL.glTexImage2D(
+                GL.GL_TEXTURE_2D, 0, GL.GL_RGBA,
+                TEX_SIZE, TEX_SIZE, 0,
+                GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, rgba,
+            )
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            self._shadow_tex_id = int(tex_id)
+
+        self._shadow_world_bounds = (min_x, min_y, max_x, max_y)
+        self._shadow_instance_idx = idx
+        inst_anchor = inst.render_anchor_enu if inst.render_anchor_enu is not None else inst.origin_enu
+        self._shadow_anchor = (float(inst_anchor[0]), float(inst_anchor[1]), float(inst_anchor[2]))
+        self._shadow_pose = (
+            self._shadow_anchor[0],
+            self._shadow_anchor[1],
+            self._shadow_anchor[2],
+            float(inst.heading_deg),
+            float(inst.pitch_deg),
+            float(inst.roll_deg),
+            float(getattr(inst, "offset_yaw_deg", 0.0)),
+            float(getattr(inst, "offset_pitch_deg", 0.0)),
+            float(getattr(inst, "offset_roll_deg", 0.0)),
+        )
+        self._shadow_ground_z = self._selection_shadow_ground_z(min_x, min_y, max_x, max_y, self._shadow_anchor[2])
+
+    def _selection_shadow_ground_z(
+        self: "BTGDisplayApp",
+        min_x: float,
+        min_y: float,
+        max_x: float,
+        max_y: float,
+        origin_z: float,
+    ) -> Optional[float]:
+        """Sample footprint points and return the closest static surface below."""
+        cx = (min_x + max_x) * 0.5
+        cy = (min_y + max_y) * 0.5
+        sample_points = [
+            (cx, cy),
+            (min_x, min_y),
+            (max_x, min_y),
+            (max_x, max_y),
+            (min_x, max_y),
+            (cx, min_y),
+            (max_x, cy),
+            (cx, max_y),
+            (min_x, cy),
+        ]
+
+        best_z: Optional[float] = None
+        for sx, sy in sample_points:
+            hit_z = self._first_surface_z_below(sx, sy, origin_z)
+            if hit_z is None:
+                continue
+            if best_z is None or hit_z > best_z:
+                best_z = hit_z
+        return best_z
+
+    def _first_surface_z_below(
+        self: "BTGDisplayApp",
+        x: float,
+        y: float,
+        origin_z: float,
+    ) -> Optional[float]:
+        """Return the highest triangle surface z below (x, y, origin_z)."""
+        static_mesh = self.scene_static_merged_mesh
+        if static_mesh is None or not static_mesh.vertices or not static_mesh.faces:
+            return None
+
+        verts = static_mesh.vertices
+        eps = 1e-7
+        best_z: Optional[float] = None
+
+        for ia, ib, ic in static_mesh.faces:
+            ax, ay, az = verts[ia]
+            bx, by, bz = verts[ib]
+            cx, cy, cz = verts[ic]
+
+            min_tx = min(ax, bx, cx)
+            max_tx = max(ax, bx, cx)
+            min_ty = min(ay, by, cy)
+            max_ty = max(ay, by, cy)
+            if x < (min_tx - eps) or x > (max_tx + eps) or y < (min_ty - eps) or y > (max_ty + eps):
+                continue
+
+            den = ((by - cy) * (ax - cx)) + ((cx - bx) * (ay - cy))
+            if abs(den) <= eps:
+                continue
+
+            u = (((by - cy) * (x - cx)) + ((cx - bx) * (y - cy))) / den
+            v = (((cy - ay) * (x - cx)) + ((ax - cx) * (y - cy))) / den
+            w = 1.0 - u - v
+            if u < -eps or v < -eps or w < -eps:
+                continue
+
+            hit_z = (u * az) + (v * bz) + (w * cz)
+            if hit_z > origin_z + 1e-4:
+                continue
+            if best_z is None or hit_z > best_z:
+                best_z = hit_z
+
+        return best_z
+
+    def _draw_selection_shadow(self: "BTGDisplayApp") -> None:
+        idx = self.selected_model_instance_index
+        if idx is None:
+            return
+        if not (0 <= idx < len(self.scene_model_instances)):
+            return
+
+        inst = self.scene_model_instances[idx]
+        inst_anchor = inst.render_anchor_enu if inst.render_anchor_enu is not None else inst.origin_enu
+        cur_anchor = (float(inst_anchor[0]), float(inst_anchor[1]), float(inst_anchor[2]))
+        cur_pose = (
+            cur_anchor[0],
+            cur_anchor[1],
+            cur_anchor[2],
+            float(inst.heading_deg),
+            float(inst.pitch_deg),
+            float(inst.roll_deg),
+            float(getattr(inst, "offset_yaw_deg", 0.0)),
+            float(getattr(inst, "offset_pitch_deg", 0.0)),
+            float(getattr(inst, "offset_roll_deg", 0.0)),
+        )
+
+        # Rebuild whenever the selection or the object's position has changed.
+        if getattr(self, "_shadow_instance_idx", None) != idx or getattr(self, "_shadow_pose", None) != cur_pose:
+            self._build_selection_shadow_texture()
+
+        bounds = getattr(self, "_shadow_world_bounds", None)
+        if bounds is None:
+            return
+        min_x, min_y, max_x, max_y = bounds
+
+        # Place the shadow quad just above the first static surface below the
+        # selected object footprint sample point.
+        surface_z = getattr(self, "_shadow_ground_z", None)
+        if surface_z is not None:
+            terrain_z = surface_z + 0.04
+        elif self.mesh_bounds is not None:
+            terrain_z = self.mesh_bounds[0][2] + 0.08
+        else:
+            terrain_z = float(self.grid_z_height) + 0.08
+
+        if self.opengl_enabled:
+            GL = self.GL
+            shadow_tex = getattr(self, "_shadow_tex_id", None)
+            if GL is None or shadow_tex is None:
+                return
+
+            GL.glPushAttrib(
+                GL.GL_ENABLE_BIT | GL.GL_CURRENT_BIT
+                | GL.GL_DEPTH_BUFFER_BIT | GL.GL_TEXTURE_BIT
+                | GL.GL_POLYGON_BIT
+            )
+            GL.glEnable(GL.GL_BLEND)
+            GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+            GL.glEnable(GL.GL_TEXTURE_2D)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, shadow_tex)
+            GL.glDisable(GL.GL_LIGHTING)
+            GL.glDisable(GL.GL_CULL_FACE)
+            GL.glDepthMask(GL.GL_FALSE)
+            # Pull the quad slightly towards the viewer to sit on top of terrain.
+            GL.glEnable(GL.GL_POLYGON_OFFSET_FILL)
+            GL.glPolygonOffset(-1.0, -1.0)
+            GL.glColor4f(1.0, 1.0, 1.0, 1.0)
+
+            GL.glBegin(GL.GL_QUADS)
+            GL.glTexCoord2f(0.0, 0.0)
+            GL.glVertex3f(min_x, min_y, terrain_z)
+            GL.glTexCoord2f(1.0, 0.0)
+            GL.glVertex3f(max_x, min_y, terrain_z)
+            GL.glTexCoord2f(1.0, 1.0)
+            GL.glVertex3f(max_x, max_y, terrain_z)
+            GL.glTexCoord2f(0.0, 1.0)
+            GL.glVertex3f(min_x, max_y, terrain_z)
+            GL.glEnd()
+
+            GL.glDepthMask(GL.GL_TRUE)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            GL.glPopAttrib()
+            return
+
+        # Software renderer fallback: project the bounding footprint rectangle
+        # to screen space and draw a semi-transparent filled polygon.
+        width, height = self.size
+        cam = tuple(self.camera_pos)
+        corners_world = [
+            (min_x, min_y, terrain_z),
+            (max_x, min_y, terrain_z),
+            (max_x, max_y, terrain_z),
+            (min_x, max_y, terrain_z),
+        ]
+        screen_pts = []
+        for wx, wy, wz in corners_world:
+            rel = (wx - cam[0], wy - cam[1], wz - cam[2])
+            v_cam = rotate_world_to_camera(rel, self.yaw, self.pitch)
+            pt = self._project(v_cam, width, height)
+            if pt is None:
+                return
+            screen_pts.append((int(pt[0]), int(pt[1])))
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        pygame.draw.polygon(overlay, (0, 0, 0, 90), screen_pts)
+        self.screen.blit(overlay, (0, 0))
+
     def render(self: "BTGDisplayApp") -> None:
         if self.opengl_enabled:
             GL = self.GL
@@ -2440,6 +2740,7 @@ class RenderMixin:
 
             self._draw_xy_grid()
             self._render_mesh()
+            self._draw_selection_shadow()
             self.frame_projected_model_labels = self._collect_projected_model_labels()
             self._draw_model_labels()
             self._draw_crosshair()
@@ -2456,6 +2757,7 @@ class RenderMixin:
         draw_gradient_background(self.screen)
         self._draw_xy_grid()
         self._render_mesh()
+        self._draw_selection_shadow()
         self.frame_projected_model_labels = self._collect_projected_model_labels()
         self._draw_model_labels()
         self._draw_crosshair()
