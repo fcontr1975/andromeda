@@ -1271,7 +1271,9 @@ class ControlsMixin:
                 self.screen = pygame.display.set_mode(self.size, self._display_flags)
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
+                if event.key == pygame.K_ESCAPE or (
+                    event.key == pygame.K_BACKSPACE and self.menu_mode != "file_browser_create_folder"
+                ):
                     if not self.show_menu:
                         self._open_menu()
                     else:
@@ -1280,6 +1282,10 @@ class ControlsMixin:
                             self._set_status_t("status.binding_update_cancelled", "Binding update cancelled")
                         elif self.menu_mode == "save_confirm":
                             self._dismiss_save_confirm_dialog()
+                        elif self.menu_mode == "package_summary":
+                            self._dismiss_package_summary_dialog()
+                        elif self.menu_mode == "file_browser_create_folder":
+                            self._dismiss_file_browser_create_folder_prompt()
                         elif self.menu_mode == "file_browser_overwrite_confirm":
                             self.file_browser_overwrite_target = ""
                             self.menu_mode = "file_browser"
@@ -1290,6 +1296,8 @@ class ControlsMixin:
                             self.file_browser_mode = ""
                             self.file_browser_directory_action = ""
                             self.menu_mode = self.file_browser_return_mode or "main"
+                        elif self._navigate_main_menu_back():
+                            pass
                         elif self.menu_mode in (
                             "bindings",
                             "camera_view",

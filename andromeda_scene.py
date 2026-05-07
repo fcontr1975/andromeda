@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import math
 import os
+import shlex
+import shutil
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import pygame
@@ -28,6 +32,7 @@ from andromeda_backend import (
     merge_meshes,
     parse_stg_file,
     resolve_stg_object_path,
+    resolve_fgdata_root,
     rotate3_inv,
     save_viewer_config,
     stg_associated_path,
@@ -695,6 +700,356 @@ class SceneMixin:
             self._set_status_t("status.save_failed_no_target", "Save failed: no target path provided")
             return False
         return self._save_stg_to_path(target_stg_path, source_path, update_current_file=True)
+
+    def _format_file_size_bytes(self: "BTGDisplayApp", size_bytes: int) -> str:
+        size = float(max(0, int(size_bytes)))
+        units = ["B", "KB", "MB", "GB", "TB"]
+        unit_index = 0
+        while size >= 1024.0 and unit_index < (len(units) - 1):
+            size /= 1024.0
+            unit_index += 1
+        if unit_index == 0:
+            return f"{int(size)} {units[unit_index]}"
+        return f"{size:.2f} {units[unit_index]}"
+
+    def _collect_stg_reference_paths(self: "BTGDisplayApp", stg_path: str) -> List[str]:
+        references: List[str] = []
+        seen: Set[str] = set()
+        path_directives = {
+            "OBJECT_BASE",
+            "OBJECT",
+            "OBJECT_STATIC",
+            "OBJECT_STATIC_AGL",
+            "OBJECT_SHARED",
+            "OBJECT_SHARED_AGL",
+            "OBJECT_SIGN",
+            "OBJECT_SIGN_AGL",
+            "OBJECT_BUILDING_MESH_ROUGH",
+            "OBJECT_BUILDING_MESH_DETAILED",
+            "OBJECT_ROAD_ROUGH",
+            "OBJECT_ROAD_DETAILED",
+            "OBJECT_RAILWAY_ROUGH",
+            "OBJECT_RAILWAY_DETAILED",
+            "BUILDING_LIST",
+            "TREE_LIST",
+            "LINE_FEATURE_LIST",
+            "LIGHT_LIST",
+        }
+
+        try:
+            with open(stg_path, "r", encoding="utf-8") as handle:
+                raw_lines = handle.readlines()
+        except Exception:
+            return references
+
+        for raw in raw_lines:
+            line = raw.split("#", 1)[0].strip()
+            if not line:
+                continue
+            try:
+                parts = shlex.split(line)
+            except Exception:
+                parts = line.split()
+            if len(parts) < 2:
+                continue
+
+            directive = parts[0].upper()
+            candidates: List[str] = []
+            if directive in path_directives:
+                candidates.append(parts[1])
+            elif directive == "OBJECT_INSTANCED":
+                candidates.append(parts[1])
+                if len(parts) >= 3:
+                    candidates.append(parts[2])
+
+            for candidate in candidates:
+                normalized = candidate.strip().strip('"').replace("\\", "/")
+                if not normalized or normalized in seen:
+                    continue
+                seen.add(normalized)
+                references.append(normalized)
+
+        return references
+
+    def _resolve_reference_path(self: "BTGDisplayApp", reference_path: str, context_file: str) -> str:
+        candidate = reference_path.strip().strip('"')
+        if not candidate:
+            return ""
+
+        if os.path.isabs(candidate) and os.path.isfile(candidate):
+            return os.path.abspath(candidate)
+
+        resolved = resolve_stg_object_path(candidate, context_file, self.flightgear_root)
+        if resolved:
+            return os.path.abspath(resolved)
+
+        local = os.path.abspath(os.path.join(os.path.dirname(context_file), candidate))
+        if os.path.isfile(local):
+            return local
+        return ""
+
+    def _collect_xml_model_refs(self: "BTGDisplayApp", xml_path: str) -> List[str]:
+        refs: List[str] = []
+        seen: Set[str] = set()
+        try:
+            tree = ET.parse(xml_path)
+        except Exception:
+            return refs
+
+        for element in tree.iter():
+            text = (element.text or "").strip()
+            if not text:
+                continue
+            lowered = text.lower()
+            if lowered.endswith((".ac", ".xml", ".btg", ".btg.gz", ".osg", ".osgb")):
+                normalized = text.replace("\\", "/")
+                if normalized not in seen:
+                    seen.add(normalized)
+                    refs.append(normalized)
+        return refs
+
+    def _collect_ac_texture_refs(self: "BTGDisplayApp", ac_path: str) -> List[str]:
+        refs: List[str] = []
+        seen: Set[str] = set()
+        try:
+            with open(ac_path, "r", encoding="utf-8", errors="ignore") as handle:
+                lines = handle.readlines()
+        except Exception:
+            return refs
+
+        for raw in lines:
+            line = raw.strip()
+            if not line.lower().startswith("texture"):
+                continue
+            try:
+                parts = shlex.split(line)
+            except Exception:
+                parts = line.split()
+            if len(parts) < 2:
+                continue
+            texture_ref = parts[1].strip().strip('"').replace("\\", "/")
+            if texture_ref and texture_ref not in seen:
+                seen.add(texture_ref)
+                refs.append(texture_ref)
+        return refs
+
+    def _resolve_texture_path(self: "BTGDisplayApp", texture_ref: str, model_path: str) -> str:
+        candidate = texture_ref.strip().strip('"')
+        if not candidate:
+            return ""
+        if os.path.isabs(candidate) and os.path.isfile(candidate):
+            return os.path.abspath(candidate)
+
+        model_dir = os.path.dirname(model_path)
+        candidates = [
+            os.path.abspath(os.path.join(model_dir, candidate)),
+            os.path.abspath(os.path.join(model_dir, "Textures", candidate)),
+        ]
+
+        data_root = resolve_fgdata_root(self.flightgear_root)
+        if data_root:
+            candidates.extend(
+                [
+                    os.path.abspath(os.path.join(data_root, "Textures", candidate)),
+                    os.path.abspath(os.path.join(data_root, "Textures", "Terrain", candidate)),
+                    os.path.abspath(os.path.join(data_root, "Textures", "Runway", candidate)),
+                ]
+            )
+
+        for path in candidates:
+            if os.path.isfile(path):
+                return path
+        return ""
+
+    def _package_relpath_for_source(self: "BTGDisplayApp", source_path: str) -> str:
+        normalized = os.path.abspath(source_path)
+        pieces = normalized.split(os.sep)
+        lowered = [piece.lower() for piece in pieces]
+
+        scenery_idx = -1
+        for idx, piece in enumerate(lowered):
+            if piece == "scenery":
+                scenery_idx = idx
+                break
+        if scenery_idx >= 0:
+            rel_pieces = pieces[scenery_idx:]
+            return os.path.join(*rel_pieces)
+
+        suffixes = {
+            "terrain",
+            "objects",
+            "models",
+            "airports",
+            "navdata",
+            "orthophotos",
+            "vpb",
+            "buildings",
+            "roads",
+            "pylons",
+            "details",
+            "trees",
+        }
+        for idx, piece in enumerate(lowered):
+            if piece in suffixes:
+                rel_pieces = ["Scenery"] + pieces[idx:]
+                return os.path.join(*rel_pieces)
+
+        fallback_name = os.path.basename(normalized)
+        return os.path.join("Scenery", "Objects", "external", fallback_name)
+
+    def create_scenery_package(self: "BTGDisplayApp", target_directory: str) -> bool:
+        stg_path = self._resolve_active_stg_path(require_exists=True)
+        if not stg_path:
+            self._set_status_t(
+                "status.package_failed_no_stg",
+                "Create package failed: no STG file associated with current scene",
+            )
+            return False
+
+        target_dir = os.path.abspath(target_directory)
+        if not os.path.isdir(target_dir):
+            self._set_status_t(
+                "status.package_failed_invalid_target",
+                "Create package failed: invalid target folder",
+            )
+            return False
+
+        source_files: Set[str] = {stg_path}
+        pending: List[str] = []
+        for reference in self._collect_stg_reference_paths(stg_path):
+            resolved = self._resolve_reference_path(reference, stg_path)
+            if resolved and os.path.isfile(resolved) and resolved not in source_files:
+                source_files.add(resolved)
+                pending.append(resolved)
+
+        processed: Set[str] = set()
+        while pending:
+            current = pending.pop()
+            if current in processed:
+                continue
+            processed.add(current)
+
+            ext = os.path.splitext(current.lower())[1]
+            if ext == ".xml":
+                for reference in self._collect_xml_model_refs(current):
+                    resolved = self._resolve_reference_path(reference, current)
+                    if resolved and os.path.isfile(resolved) and resolved not in source_files:
+                        source_files.add(resolved)
+                        pending.append(resolved)
+            elif ext == ".ac":
+                for texture_ref in self._collect_ac_texture_refs(current):
+                    resolved = self._resolve_texture_path(texture_ref, current)
+                    if resolved and os.path.isfile(resolved) and resolved not in source_files:
+                        source_files.add(resolved)
+
+        rel_to_source: Dict[str, str] = {}
+        for source in sorted(source_files):
+            rel_path = self._package_relpath_for_source(source)
+            base_rel, ext = os.path.splitext(rel_path)
+            unique_rel = rel_path
+            counter = 2
+            while unique_rel in rel_to_source and rel_to_source[unique_rel] != source:
+                unique_rel = f"{base_rel}_{counter}{ext}"
+                counter += 1
+            rel_to_source[unique_rel] = source
+
+        copied_rel_paths: List[str] = []
+        copy_errors: List[str] = []
+        for rel_path, source in rel_to_source.items():
+            destination = os.path.abspath(os.path.join(target_dir, rel_path))
+            try:
+                os.makedirs(os.path.dirname(destination), exist_ok=True)
+                shutil.copy2(source, destination)
+                copied_rel_paths.append(rel_path)
+            except Exception as exc:
+                copy_errors.append(f"{source}: {exc}")
+
+        template_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "dist_scenery_readme_template.txt"))
+        readme_rel_path = "scenery_readme.txt"
+        readme_destination = os.path.abspath(os.path.join(target_dir, readme_rel_path))
+        try:
+            with open(template_path, "r", encoding="utf-8") as handle:
+                readme_lines = handle.readlines()
+        except Exception:
+            readme_lines = []
+
+        if readme_lines:
+            location_text = ""
+            if self.scene_base_mesh and self.scene_base_mesh.center_ecef != (0.0, 0.0, 0.0):
+                lon_deg, lat_deg, _elev_m = ecef_to_geodetic(*self.scene_base_mesh.center_ecef)
+                location_text = f"{lat_deg:.6f}, {lon_deg:.6f}"
+
+            patched_lines: List[str] = []
+            for raw in readme_lines:
+                if raw.strip().upper().startswith("SCENERY LOCATION:"):
+                    existing = raw.split(":", 1)[1].strip() if ":" in raw else ""
+                    if not existing and location_text:
+                        patched_lines.append(f"SCENERY LOCATION: {location_text}\n")
+                        continue
+                patched_lines.append(raw)
+
+            try:
+                with open(readme_destination, "w", encoding="utf-8") as handle:
+                    handle.writelines(patched_lines)
+                copied_rel_paths.append(readme_rel_path)
+            except Exception as exc:
+                copy_errors.append(f"{readme_destination}: {exc}")
+
+        trimmed_target = target_dir.rstrip(os.sep)
+        if not trimmed_target:
+            trimmed_target = target_dir
+        zip_path = os.path.abspath(f"{trimmed_target}.zip")
+
+        zip_entries = sorted(set(copied_rel_paths))
+        try:
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for rel_path in zip_entries:
+                    full_path = os.path.join(target_dir, rel_path)
+                    if os.path.isfile(full_path):
+                        archive.write(full_path, arcname=rel_path.replace(os.sep, "/"))
+        except Exception as exc:
+            self._set_status_t(
+                "status.package_failed_zip_fmt",
+                "Create package failed while writing zip: {error}",
+                error=exc,
+            )
+            return False
+
+        try:
+            zip_size = os.path.getsize(zip_path)
+        except Exception:
+            zip_size = 0
+
+        summary_lines: List[str] = [
+            f"Zip Location: {zip_path}",
+            "File contents:",
+        ]
+        max_listed = 36
+        display_entries = sorted(path.replace(os.sep, "/") for path in zip_entries)
+        for rel_path in display_entries[:max_listed]:
+            summary_lines.append(f"- {rel_path}")
+        if len(display_entries) > max_listed:
+            summary_lines.append(f"- ... ({len(display_entries) - max_listed} more)")
+        summary_lines.append(f"File Size: {self._format_file_size_bytes(zip_size)}")
+
+        if copy_errors:
+            summary_lines.append("")
+            summary_lines.append("Warnings:")
+            for err in copy_errors[:8]:
+                summary_lines.append(f"- {err}")
+            if len(copy_errors) > 8:
+                summary_lines.append(f"- ... ({len(copy_errors) - 8} more)")
+
+        self._set_status_t(
+            "status.package_created_fmt",
+            "Scenery package created: {zip_path}",
+            zip_path=zip_path,
+        )
+        self._open_package_summary_dialog(
+            self._menu_t("dialog.package_created_title", "Scenery Package Created"),
+            summary_lines,
+        )
+        return True
 
     # ------------------------------------------------------------------
     # Scene rebuild helpers

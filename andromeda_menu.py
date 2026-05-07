@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class MenuMixin:
     _WINDOWS_DRIVES_ROOT = "::windows-drives-root::"
+    _FILE_BROWSER_ACTION_CREATE_FOLDER = "::create-folder::"
 
     def _menu_t(self: "BTGDisplayApp", key: str, default: str) -> str:
         value = self.menu_text_map.get(key)
@@ -38,9 +39,18 @@ class MenuMixin:
 
     def _main_menu_item_label(self: "BTGDisplayApp", item: str) -> str:
         key_map = {
+            "File": "main.file",
+            "Options": "main.options",
+            "UI": "main.ui",
+            "Configuration": "main.configuration",
+            "View": "main.view",
+            "Object Placement": "main.object_placement",
+            "Load": "main.load_stg",
             "Load STG": "main.load_stg",
             "Save": "main.save",
+            "Save As": "main.save_as_stg",
             "Save As STG": "main.save_as_stg",
+            "Create Scenery Package": "main.create_scenery_package",
             "Menu Language": "main.menu_language",
             "Help Text File": "main.help_text_file",
             "Reload Help Text": "main.reload_help_text",
@@ -84,6 +94,91 @@ class MenuMixin:
         if key is None:
             return item
         return self._menu_t(key, item)
+
+    def _main_menu_modes(self: "BTGDisplayApp") -> Tuple[str, ...]:
+        return (
+            "main",
+            "main_file",
+            "main_options",
+            "main_options_ui",
+            "main_options_configuration",
+            "main_options_view",
+            "main_options_object_placement",
+        )
+
+    def _is_main_menu_mode(self: "BTGDisplayApp") -> bool:
+        return self.menu_mode in self._main_menu_modes()
+
+    def _main_menu_items_for_mode(self: "BTGDisplayApp", mode: Optional[str] = None) -> List[str]:
+        active_mode = mode or self.menu_mode
+        menus = {
+            "main": ["File", "Add Object", "Options", "Exit"],
+            "main_file": ["Load", "Save", "Save As", "Create Scenery Package"],
+            "main_options": ["UI", "Configuration", "View", "Object Placement"],
+            "main_options_ui": [
+                "Menu Language",
+                "Help Text File",
+                "Reload Help Text",
+                "Preview Panel Location",
+                "Set Missing Material Color",
+            ],
+            "main_options_configuration": [
+                "Flightgear Location",
+                "Custom Scenery Paths",
+                "Change Keyboard bindings",
+            ],
+            "main_options_view": [
+                "Toggle Textured View",
+                "Set Camera Start View",
+                "Set Camera Clipping",
+            ],
+            "main_options_object_placement": [
+                "Grid Settings",
+                "Toggle Nudge Mode",
+                "Set Object Nudge Distance",
+                "Set Object Nudge Repeat",
+            ],
+        }
+        return list(menus.get(active_mode, []))
+
+    def _main_menu_parent_mode(self: "BTGDisplayApp", mode: Optional[str] = None) -> Optional[str]:
+        active_mode = mode or self.menu_mode
+        parent_map = {
+            "main_file": "main",
+            "main_options": "main",
+            "main_options_ui": "main_options",
+            "main_options_configuration": "main_options",
+            "main_options_view": "main_options",
+            "main_options_object_placement": "main_options",
+        }
+        return parent_map.get(active_mode)
+
+    def _navigate_main_menu_back(self: "BTGDisplayApp") -> bool:
+        parent_mode = self._main_menu_parent_mode()
+        if not parent_mode:
+            return False
+        self.menu_mode = parent_mode
+        items = self._main_menu_items_for_mode(parent_mode)
+        if not items:
+            self.main_menu_index = 0
+        else:
+            self.main_menu_index = max(0, min(self.main_menu_index, len(items) - 1))
+        self.main_menu_scroll_start = 0
+        self._reset_menu_hover_scroll()
+        return True
+
+    def _main_menu_title(self: "BTGDisplayApp") -> str:
+        title_map = {
+            "main": ("title.menu", "Menu"),
+            "main_file": ("title.menu_file", "File"),
+            "main_options": ("title.menu_options", "Options"),
+            "main_options_ui": ("title.menu_options_ui", "Options / UI"),
+            "main_options_configuration": ("title.menu_options_configuration", "Options / Configuration"),
+            "main_options_view": ("title.menu_options_view", "Options / View"),
+            "main_options_object_placement": ("title.menu_options_object_placement", "Options / Object Placement"),
+        }
+        key, default = title_map.get(self.menu_mode, ("title.menu", "Menu"))
+        return self._menu_t(key, default)
 
     def _resolve_menu_text_path(self: "BTGDisplayApp", file_path: str) -> str:
         candidate = os.path.abspath(file_path)
@@ -363,10 +458,15 @@ class MenuMixin:
             self._gl_draw_text(line, pad_x, box_y + pad_y + i * line_h, (176, 176, 176), self.font_small)
 
     def _menu_bottom_hint_text(self: "BTGDisplayApp") -> str:
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
+            if self.menu_mode == "main":
+                return self._menu_t(
+                    "hint.main",
+                    "Mouse: hover + click | Up/Down/PgUp/PgDn + Enter | ESC closes menu.",
+                )
             return self._menu_t(
-                "hint.main",
-                "Mouse: hover + click | Up/Down/PgUp/PgDn + Enter | ESC closes menu.",
+                "hint.main_submenu",
+                "Mouse: hover + click | Up/Down/PgUp/PgDn + Enter | ESC goes back.",
             )
 
         if self.menu_mode == "bindings":
@@ -393,6 +493,7 @@ class MenuMixin:
             if self.file_browser_mode == "directory_select":
                 return (
                     "Open folders to navigate | Select [Select This Folder] to confirm | "
+                    "Select [Create Folder] to add a new destination folder | "
                     "Enter: activate selected row | Up/Down/PgUp/PgDn: navigate | ESC: back"
                 )
             return self._menu_t(
@@ -400,10 +501,15 @@ class MenuMixin:
                 "Mouse: single-click select, double-click open/save | Enter opens/saves selected | Type to edit save name | Backspace/Delete: edit | ESC: back",
             )
 
+        if self.menu_mode == "file_browser_create_folder":
+            return "Type folder name | Enter: create | Backspace: edit | Delete: clear | ESC: cancel"
+
         if self.menu_mode == "file_browser_overwrite_confirm":
             return "Y/Enter: overwrite | N/ESC: cancel"
         if self.menu_mode == "save_confirm":
             return "Click, Enter, Space, or ESC to continue"
+        if self.menu_mode == "package_summary":
+            return "Enter/Space/ESC: close"
         if self.menu_mode == "scene_switch_confirm":
             return "Y/Enter: save | N: discard | ESC/C: cancel"
         if self.menu_mode == "camera_view":
@@ -991,6 +1097,7 @@ class MenuMixin:
             self.file_browser_save_name = self._file_browser_default_save_name()
         else:
             self.file_browser_save_name = ""
+        self.file_browser_new_folder_name = ""
         self.file_browser_overwrite_target = ""
         self.menu_mode = "file_browser"
         self._refresh_file_browser_entries()
@@ -1040,6 +1147,17 @@ class MenuMixin:
                     "color": (190, 240, 190),
                 }
             )
+
+            if self.file_browser_directory_action == "create_scenery_package":
+                entries.append(
+                    {
+                        "name": "[Create Folder]",
+                        "path": self._FILE_BROWSER_ACTION_CREATE_FOLDER,
+                        "is_dir": False,
+                        "is_action": True,
+                        "color": (255, 225, 160),
+                    }
+                )
 
             parent = self._file_browser_parent_directory(directory)
             if parent:
@@ -1221,7 +1339,7 @@ class MenuMixin:
     def _main_menu_row_layout(self: "BTGDisplayApp") -> Tuple[int, int, int, int, int]:
         y0 = 170
         row_h = 44
-        n = len(self.main_menu_items)
+        n = len(self._main_menu_items_for_mode())
         available_px = max(220, self.size[1] - 290)
         max_rows = max(5, min(n if n > 0 else 5, available_px // row_h))
         idx = max(0, min(self.main_menu_index, max(0, n - 1)))
@@ -1328,6 +1446,9 @@ class MenuMixin:
         if self.file_browser_mode == "directory_select":
             if not is_action:
                 return
+            if entry_path == self._FILE_BROWSER_ACTION_CREATE_FOLDER:
+                self._open_file_browser_create_folder_prompt()
+                return
             selected_dir = os.path.abspath(entry_path)
             action = self.file_browser_directory_action
             return_mode = self.file_browser_return_mode or "main"
@@ -1335,9 +1456,12 @@ class MenuMixin:
                 self._apply_flightgear_root_directory(selected_dir)
             elif action == "custom_scenery_add":
                 self._apply_custom_scenery_directory(selected_dir, return_mode)
+            elif action == "create_scenery_package":
+                self.create_scenery_package(selected_dir)
             self.file_browser_directory_action = ""
             self.file_browser_mode = ""
-            self.menu_mode = return_mode
+            if self.menu_mode != "package_summary":
+                self.menu_mode = return_mode
             return
 
         if self.file_browser_mode == "load":
@@ -1366,6 +1490,103 @@ class MenuMixin:
             if self.save_stg_as(target_path):
                 self._close_menu()
             return
+
+    def _open_file_browser_create_folder_prompt(self: "BTGDisplayApp") -> None:
+        self.file_browser_new_folder_name = ""
+        self.menu_mode = "file_browser_create_folder"
+
+    def _dismiss_file_browser_create_folder_prompt(self: "BTGDisplayApp") -> None:
+        self.file_browser_new_folder_name = ""
+        self.menu_mode = "file_browser"
+
+    def _create_folder_prompt_button_rects(self: "BTGDisplayApp") -> Tuple[int, int, int, int, int, int, int, int]:
+        panel_w = min(760, self.size[0] - 100)
+        panel_h = 230
+        panel_x = self.size[0] // 2 - panel_w // 2
+        panel_y = self.size[1] // 2 - panel_h // 2
+        btn_w = 140
+        btn_h = 38
+        create_x = panel_x + panel_w // 2 - btn_w - 18
+        cancel_x = panel_x + panel_w // 2 + 18
+        btn_y = panel_y + panel_h - 62
+        return panel_x, panel_y, panel_w, panel_h, create_x, cancel_x, btn_y, btn_h
+
+    def _confirm_file_browser_create_folder_prompt(self: "BTGDisplayApp") -> None:
+        folder_name = (self.file_browser_new_folder_name or "").strip()
+        if not folder_name:
+            self._set_status_t("status.folder_create_name_required", "Create folder failed: name is required")
+            return
+        if folder_name in {".", ".."}:
+            self._set_status_t("status.folder_create_name_invalid", "Create folder failed: invalid folder name")
+            return
+        if "/" in folder_name or "\\" in folder_name:
+            self._set_status_t("status.folder_create_name_sep", "Create folder failed: '/' and '\\' are not allowed")
+            return
+        if os.name == "nt" and any(ch in folder_name for ch in '<>:"|?*'):
+            self._set_status_t("status.folder_create_name_invalid", "Create folder failed: invalid folder name")
+            return
+
+        target_dir = os.path.abspath(os.path.join(self.file_browser_dir or os.getcwd(), folder_name))
+        if os.path.exists(target_dir):
+            if os.path.isdir(target_dir):
+                self.file_browser_dir = target_dir
+                self.file_browser_index = 0
+                self._refresh_file_browser_entries()
+                self.menu_mode = "file_browser"
+                self.file_browser_new_folder_name = ""
+                self._set_status_t(
+                    "status.folder_create_exists_fmt",
+                    "Folder already exists, opened: {name}",
+                    name=folder_name,
+                )
+                return
+            self._set_status_t(
+                "status.folder_create_exists_file_fmt",
+                "Create folder failed: '{name}' exists and is not a directory",
+                name=folder_name,
+            )
+            return
+
+        try:
+            os.makedirs(target_dir, exist_ok=False)
+        except Exception as exc:
+            self._set_status_t(
+                "status.folder_create_failed_fmt",
+                "Create folder failed: {error}",
+                error=exc,
+            )
+            return
+
+        self.file_browser_dir = target_dir
+        self.file_browser_index = 0
+        self._refresh_file_browser_entries()
+        self.menu_mode = "file_browser"
+        self.file_browser_new_folder_name = ""
+        self._set_status_t(
+            "status.folder_created_fmt",
+            "Created folder: {name}",
+            name=folder_name,
+        )
+
+    def _handle_file_browser_create_folder_keydown(self: "BTGDisplayApp", event: pygame.event.Event) -> None:
+        key_code = event.key
+        if key_code in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            self._confirm_file_browser_create_folder_prompt()
+            return
+        if key_code == pygame.K_ESCAPE:
+            self._dismiss_file_browser_create_folder_prompt()
+            return
+        if key_code == pygame.K_BACKSPACE:
+            if self.file_browser_new_folder_name:
+                self.file_browser_new_folder_name = self.file_browser_new_folder_name[:-1]
+            return
+        if key_code == pygame.K_DELETE:
+            self.file_browser_new_folder_name = ""
+            return
+
+        ch = getattr(event, "unicode", "")
+        if ch and len(ch) == 1 and ord(ch) >= 32 and ch not in {"/", "\\"}:
+            self.file_browser_new_folder_name += ch
 
     def _handle_file_browser_keydown(self: "BTGDisplayApp", event: pygame.event.Event) -> None:
         key_code = event.key
@@ -1447,15 +1668,57 @@ class MenuMixin:
         else:
             self._close_menu()
 
+    def _open_package_summary_dialog(self: "BTGDisplayApp", title: str, lines: List[str]) -> None:
+        if self.show_menu:
+            if self.menu_mode == "file_browser":
+                self.package_summary_return_mode = self.file_browser_return_mode or "main"
+            else:
+                self.package_summary_return_mode = self.menu_mode if self.menu_mode != "package_summary" else "main"
+        else:
+            self.package_summary_return_mode = ""
+            self.mouse_captured_before_menu = self.mouse_captured
+            self.show_menu = True
+            self.set_mouse_capture(False)
+
+        self.binding_capture_action = None
+        self.package_summary_title = title or self._menu_t("dialog.package_created_title", "Scenery Package Created")
+        self.package_summary_lines = list(lines)
+        self.menu_mode = "package_summary"
+
+    def _dismiss_package_summary_dialog(self: "BTGDisplayApp") -> None:
+        self.package_summary_title = ""
+        self.package_summary_lines = []
+        return_mode = self.package_summary_return_mode
+        self.package_summary_return_mode = ""
+        if return_mode:
+            self.menu_mode = return_mode
+        else:
+            self._close_menu()
+
+    def _package_summary_ok_button_rect(self: "BTGDisplayApp") -> Tuple[int, int, int, int]:
+        panel_w = min(980, self.size[0] - 80)
+        panel_h = min(560, self.size[1] - 140)
+        panel_x = self.size[0] // 2 - panel_w // 2
+        panel_y = self.size[1] // 2 - panel_h // 2
+        ok_w = 120
+        ok_h = 36
+        ok_x = panel_x + panel_w // 2 - ok_w // 2
+        ok_y = panel_y + panel_h - 54
+        return ok_x, ok_y, ok_w, ok_h
+
     def _open_menu(self: "BTGDisplayApp") -> None:
         self.mouse_captured_before_menu = self.mouse_captured
         self.show_menu = True
         self.menu_mode = "main"
         self.main_menu_scroll_start = 0
         self.binding_capture_action = None
+        self.file_browser_new_folder_name = ""
         self.save_confirm_title = ""
         self.save_confirm_message = ""
         self.save_confirm_return_mode = ""
+        self.package_summary_title = ""
+        self.package_summary_lines = []
+        self.package_summary_return_mode = ""
         self.set_mouse_capture(False)
 
     def _close_menu(self: "BTGDisplayApp") -> None:
@@ -1466,14 +1729,25 @@ class MenuMixin:
         self.file_browser_mode = ""
         self.file_browser_return_mode = "main"
         self.file_browser_directory_action = ""
+        self.file_browser_new_folder_name = ""
         self.binding_capture_action = None
         self.save_confirm_title = ""
         self.save_confirm_message = ""
         self.save_confirm_return_mode = ""
+        self.package_summary_title = ""
+        self.package_summary_lines = []
+        self.package_summary_return_mode = ""
         if self.mouse_captured_before_menu:
             self.set_mouse_capture(True)
 
     def _open_add_object_menu(self: "BTGDisplayApp") -> None:
+        if not self._resolve_active_stg_path(require_exists=False):
+            self._set_status_t(
+                "status.add_object_failed_no_scene",
+                "You need to load or save an STG first!",
+            )
+            return
+
         self._open_menu()
         self._build_add_object_categories()
         self.add_object_category_scroll_start = 0
@@ -1508,7 +1782,58 @@ class MenuMixin:
             self._clear_add_object_preview()
 
     def _run_main_menu_action(self: "BTGDisplayApp") -> None:
-        item = self.main_menu_items[self.main_menu_index]
+        items = self._main_menu_items_for_mode()
+        if not items:
+            return
+        self.main_menu_index = max(0, min(self.main_menu_index, len(items) - 1))
+        item = items[self.main_menu_index]
+
+        if self.menu_mode == "main":
+            if item == "File":
+                self.menu_mode = "main_file"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+            if item == "Options":
+                self.menu_mode = "main_options"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+
+        elif self.menu_mode == "main_options":
+            if item == "UI":
+                self.menu_mode = "main_options_ui"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+            if item == "Configuration":
+                self.menu_mode = "main_options_configuration"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+            if item == "View":
+                self.menu_mode = "main_options_view"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+            if item == "Object Placement":
+                self.menu_mode = "main_options_object_placement"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+
+        # Map submenu leaf labels onto existing action identifiers.
+        if self.menu_mode == "main_file":
+            item = {
+                "Load": "Load STG",
+                "Save As": "Save As STG",
+            }.get(item, item)
         if item == "Load STG":
             if self.last_browse_dir and os.path.isdir(self.last_browse_dir):
                 start_dir = self.last_browse_dir
@@ -1529,6 +1854,21 @@ class MenuMixin:
                 return
             start_dir = os.path.dirname(source_stg_path) if source_stg_path else (self.last_browse_dir or os.getcwd())
             self._open_file_browser("save_as", start_dir=start_dir)
+        elif item == "Create Scenery Package":
+            source_stg_path = self._resolve_active_stg_path(require_exists=True)
+            if not source_stg_path:
+                self._set_status_t(
+                    "status.package_failed_no_stg",
+                    "Create package failed: no STG file associated with current scene",
+                )
+                return
+            start_dir = os.path.dirname(source_stg_path) if source_stg_path else (self.last_browse_dir or os.getcwd())
+            self._open_file_browser(
+                "directory_select",
+                start_dir=start_dir,
+                return_mode=self.menu_mode,
+                directory_action="create_scenery_package",
+            )
         elif item == "Menu Language":
             self._open_file_browser("menu_language", start_dir=os.path.dirname(__file__))
         elif item == "Help Text File":
@@ -1642,11 +1982,14 @@ class MenuMixin:
     def _handle_menu_keydown(self: "BTGDisplayApp", event: pygame.event.Event) -> None:
         key_code = event.key
 
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
+            item_count = len(self._main_menu_items_for_mode())
+            if item_count <= 0:
+                return
             if key_code == pygame.K_UP:
-                self.main_menu_index = (self.main_menu_index - 1) % len(self.main_menu_items)
+                self.main_menu_index = (self.main_menu_index - 1) % item_count
             elif key_code == pygame.K_DOWN:
-                self.main_menu_index = (self.main_menu_index + 1) % len(self.main_menu_items)
+                self.main_menu_index = (self.main_menu_index + 1) % item_count
             elif key_code == pygame.K_PAGEUP:
                 _y0, _row_h, _start, visible_count, _n = self._main_menu_row_layout()
                 step = max(1, visible_count - 1)
@@ -1655,6 +1998,8 @@ class MenuMixin:
                 _y0, _row_h, _start, visible_count, n = self._main_menu_row_layout()
                 step = max(1, visible_count - 1)
                 self.main_menu_index = min(max(0, n - 1), self.main_menu_index + step)
+            elif key_code == pygame.K_LEFT and self.menu_mode != "main":
+                self._navigate_main_menu_back()
             elif key_code in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 self._run_main_menu_action()
             return
@@ -1731,6 +2076,15 @@ class MenuMixin:
         if self.menu_mode == "save_confirm":
             if key_code in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_SPACE):
                 self._dismiss_save_confirm_dialog()
+            return
+
+        if self.menu_mode == "package_summary":
+            if key_code in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_SPACE):
+                self._dismiss_package_summary_dialog()
+            return
+
+        if self.menu_mode == "file_browser_create_folder":
+            self._handle_file_browser_create_folder_keydown(event)
             return
 
         if self.menu_mode == "file_browser":
@@ -1908,7 +2262,7 @@ class MenuMixin:
                 self._reset_menu_hover_scroll()
             return
 
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
             y0, row_h, start, visible_count, n = self._main_menu_row_layout()
             if n <= 0:
                 return
@@ -2098,6 +2452,23 @@ class MenuMixin:
             self._dismiss_save_confirm_dialog()
             return
 
+        if self.menu_mode == "package_summary":
+            ok_x, ok_y, ok_w, ok_h = self._package_summary_ok_button_rect()
+            if ok_x <= mx <= ok_x + ok_w and ok_y <= my <= ok_y + ok_h:
+                self._dismiss_package_summary_dialog()
+            return
+
+        if self.menu_mode == "file_browser_create_folder":
+            _panel_x, _panel_y, _panel_w, _panel_h, create_x, cancel_x, btn_y, btn_h = self._create_folder_prompt_button_rects()
+            btn_w = 140
+            if create_x <= mx <= create_x + btn_w and btn_y <= my <= btn_y + btn_h:
+                self._confirm_file_browser_create_folder_prompt()
+                return
+            if cancel_x <= mx <= cancel_x + btn_w and btn_y <= my <= btn_y + btn_h:
+                self._dismiss_file_browser_create_folder_prompt()
+                return
+            return
+
         if self.menu_mode == "file_browser":
             panel_x, panel_y, panel_w, panel_h, row_y, row_h, max_rows, start, n = self._file_browser_row_layout()
             if n <= 0:
@@ -2156,7 +2527,7 @@ class MenuMixin:
                 self.menu_mode = "file_browser"
             return
 
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
             y0, row_h, start, visible_count, n = self._main_menu_row_layout()
             if n <= 0:
                 return
@@ -2252,8 +2623,8 @@ class MenuMixin:
         overlay.fill((8, 12, 18, 190))
         self.screen.blit(overlay, (0, 0))
 
-        if self.menu_mode == "main":
-            title = self._menu_t("title.menu", "Menu")
+        if self._is_main_menu_mode():
+            title = self._main_menu_title()
         elif self.menu_mode == "bindings":
             title = self._menu_t("title.bindings", "Change Keyboard Bindings")
         elif self.menu_mode == "file_browser":
@@ -2268,10 +2639,18 @@ class MenuMixin:
             elif self.file_browser_mode == "directory_select":
                 if self.file_browser_directory_action == "flightgear_root":
                     title = "Select FlightGear Root"
+                elif self.file_browser_directory_action == "create_scenery_package":
+                    title = "Select Package Folder"
                 else:
                     title = "Select Custom Scenery Directory"
             else:
                 title = self._menu_t("title.file_browser", "File Browser")
+        elif self.menu_mode == "file_browser_create_folder":
+            title = "Create Folder"
+        elif self.menu_mode == "save_confirm":
+            title = self.save_confirm_title or self._menu_t("dialog.save_completed_title", "Save Complete")
+        elif self.menu_mode == "package_summary":
+            title = self.package_summary_title or self._menu_t("dialog.package_created_title", "Scenery Package Created")
         elif self.menu_mode == "object_nudge":
             title = self._menu_t("title.object_nudge", "Set Object Nudge Distance")
         elif self.menu_mode == "object_nudge_repeat":
@@ -2301,9 +2680,9 @@ class MenuMixin:
         title_surf = self.font_large.render(title, True, (242, 242, 242))
         self.screen.blit(title_surf, (self.size[0] // 2 - title_surf.get_width() // 2, 80))
 
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
             y0, row_h, start, visible_count, n = self._main_menu_row_layout()
-            visible_items = self.main_menu_items[start : start + visible_count]
+            visible_items = self._main_menu_items_for_mode()[start : start + visible_count]
             for i, item in enumerate(visible_items):
                 abs_idx = start + i
                 selected = abs_idx == self.main_menu_index
@@ -2352,6 +2731,8 @@ class MenuMixin:
             elif self.file_browser_mode == "directory_select":
                 if self.file_browser_directory_action == "flightgear_root":
                     mode_text = "Select FlightGear root directory"
+                elif self.file_browser_directory_action == "create_scenery_package":
+                    mode_text = "Select destination folder for scenery package"
                 else:
                     mode_text = "Select a custom scenery directory"
             else:
@@ -2454,6 +2835,78 @@ class MenuMixin:
             pygame.draw.rect(self.screen, (132, 210, 152), (ok_x, ok_y, ok_w, ok_h), 2, border_radius=6)
             ok_surf = self.font_mono.render(self._menu_t("dialog.ok", "OK"), True, (238, 248, 238))
             self.screen.blit(ok_surf, (ok_x + ok_w // 2 - ok_surf.get_width() // 2, ok_y + 7))
+
+        elif self.menu_mode == "package_summary":
+            panel_w = min(980, self.size[0] - 80)
+            panel_h = min(560, self.size[1] - 140)
+            panel_x = self.size[0] // 2 - panel_w // 2
+            panel_y = self.size[1] // 2 - panel_h // 2
+            pygame.draw.rect(self.screen, (20, 28, 40), (panel_x, panel_y, panel_w, panel_h), border_radius=10)
+            pygame.draw.rect(self.screen, (78, 96, 120), (panel_x, panel_y, panel_w, panel_h), 2, border_radius=10)
+
+            line_h = max(16, self.font_small.get_linesize())
+            text_x = panel_x + 24
+            text_y = panel_y + 48
+            text_w = panel_w - 48
+            max_lines = max(1, (panel_h - 116) // line_h)
+            source_lines = self.package_summary_lines if self.package_summary_lines else ["(no details)"]
+            render_lines: List[str] = []
+            for raw in source_lines:
+                wrapped = self._wrap_menu_hint_lines(raw, text_w)
+                if wrapped:
+                    render_lines.extend(wrapped)
+                else:
+                    render_lines.append(raw)
+            if len(render_lines) > max_lines:
+                render_lines = render_lines[: max_lines - 1] + ["..."]
+
+            for idx, line in enumerate(render_lines):
+                surf = self.font_small.render(line, True, (220, 220, 220))
+                self.screen.blit(surf, (text_x, text_y + idx * line_h))
+
+            ok_x, ok_y, ok_w, ok_h = self._package_summary_ok_button_rect()
+            pygame.draw.rect(self.screen, (48, 104, 62), (ok_x, ok_y, ok_w, ok_h), border_radius=6)
+            pygame.draw.rect(self.screen, (132, 210, 152), (ok_x, ok_y, ok_w, ok_h), 2, border_radius=6)
+            ok_surf = self.font_mono.render(self._menu_t("dialog.ok", "OK"), True, (238, 248, 238))
+            self.screen.blit(ok_surf, (ok_x + ok_w // 2 - ok_surf.get_width() // 2, ok_y + 7))
+
+        elif self.menu_mode == "file_browser_create_folder":
+            panel_x, panel_y, panel_w, panel_h, create_x, cancel_x, btn_y, btn_h = self._create_folder_prompt_button_rects()
+            btn_w = 140
+            pygame.draw.rect(self.screen, (20, 28, 40), (panel_x, panel_y, panel_w, panel_h), border_radius=10)
+            pygame.draw.rect(self.screen, (78, 96, 120), (panel_x, panel_y, panel_w, panel_h), 2, border_radius=10)
+
+            helper = self.font_small.render("Enter folder name for scenery distribution:", True, (200, 220, 236))
+            self.screen.blit(helper, (panel_x + 24, panel_y + 44))
+
+            field_x = panel_x + 24
+            field_y = panel_y + 82
+            field_w = panel_w - 48
+            field_h = 42
+            pygame.draw.rect(self.screen, (10, 14, 22), (field_x, field_y, field_w, field_h), border_radius=6)
+            pygame.draw.rect(self.screen, (108, 136, 170), (field_x, field_y, field_w, field_h), 2, border_radius=6)
+
+            input_value = self.file_browser_new_folder_name if self.file_browser_new_folder_name else ""
+            if not input_value:
+                input_value = "(type folder name)"
+                input_color = (130, 145, 165)
+            else:
+                input_color = (235, 240, 245)
+            max_chars = max(10, (field_w - 18) // 11)
+            if len(input_value) > max_chars:
+                input_value = "..." + input_value[-(max_chars - 3):]
+            input_surf = self.font_mono.render(input_value, True, input_color)
+            self.screen.blit(input_surf, (field_x + 10, field_y + 11))
+
+            pygame.draw.rect(self.screen, (48, 104, 62), (create_x, btn_y, btn_w, btn_h), border_radius=6)
+            pygame.draw.rect(self.screen, (132, 210, 152), (create_x, btn_y, btn_w, btn_h), 2, border_radius=6)
+            pygame.draw.rect(self.screen, (104, 52, 52), (cancel_x, btn_y, btn_w, btn_h), border_radius=6)
+            pygame.draw.rect(self.screen, (220, 140, 140), (cancel_x, btn_y, btn_w, btn_h), 2, border_radius=6)
+
+            create_surf = self.font_mono.render("Create", True, (238, 248, 238))
+            cancel_surf = self.font_mono.render("Cancel", True, (248, 238, 238))
+            self.screen.blit(create_surf, (create_x + btn_w // 2 - create_surf.get_width() // 2, btn_y + 8))
+            self.screen.blit(cancel_surf, (cancel_x + btn_w // 2 - cancel_surf.get_width() // 2, btn_y + 8))
 
         elif self.menu_mode == "scene_switch_confirm":
             panel_w = 860
@@ -2770,8 +3223,8 @@ class MenuMixin:
         self._gl_begin_2d()
         self._gl_draw_rect(0, 0, self.size[0], self.size[1], (8 / 255.0, 12 / 255.0, 18 / 255.0, 0.75))
 
-        if self.menu_mode == "main":
-            title = self._menu_t("title.menu", "Menu")
+        if self._is_main_menu_mode():
+            title = self._main_menu_title()
         elif self.menu_mode == "bindings":
             title = self._menu_t("title.bindings", "Change Keyboard Bindings")
         elif self.menu_mode == "file_browser":
@@ -2786,10 +3239,18 @@ class MenuMixin:
             elif self.file_browser_mode == "directory_select":
                 if self.file_browser_directory_action == "flightgear_root":
                     title = "Select FlightGear Root"
+                elif self.file_browser_directory_action == "create_scenery_package":
+                    title = "Select Package Folder"
                 else:
                     title = "Select Custom Scenery Directory"
             else:
                 title = self._menu_t("title.file_browser", "File Browser")
+        elif self.menu_mode == "file_browser_create_folder":
+            title = "Create Folder"
+        elif self.menu_mode == "save_confirm":
+            title = self.save_confirm_title or self._menu_t("dialog.save_completed_title", "Save Complete")
+        elif self.menu_mode == "package_summary":
+            title = self.package_summary_title or self._menu_t("dialog.package_created_title", "Scenery Package Created")
         elif self.menu_mode == "object_nudge":
             title = self._menu_t("title.object_nudge", "Set Object Nudge Distance")
         elif self.menu_mode == "object_nudge_repeat":
@@ -2819,9 +3280,9 @@ class MenuMixin:
         title_x = self.size[0] // 2 - 180
         self._gl_draw_text(title, title_x, 80, (242, 242, 242), self.font_large)
 
-        if self.menu_mode == "main":
+        if self._is_main_menu_mode():
             y0, row_h, start, visible_count, n = self._main_menu_row_layout()
-            visible_items = self.main_menu_items[start : start + visible_count]
+            visible_items = self._main_menu_items_for_mode()[start : start + visible_count]
             for i, item in enumerate(visible_items):
                 abs_idx = start + i
                 selected = abs_idx == self.main_menu_index
@@ -2875,6 +3336,8 @@ class MenuMixin:
             elif self.file_browser_mode == "directory_select":
                 if self.file_browser_directory_action == "flightgear_root":
                     mode_text = "Select FlightGear root directory"
+                elif self.file_browser_directory_action == "create_scenery_package":
+                    mode_text = "Select destination folder for scenery package"
                 else:
                     mode_text = "Select a custom scenery directory"
             else:
@@ -2961,6 +3424,96 @@ class MenuMixin:
             self._gl_draw_rect(ok_x, ok_y, 2, ok_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
             self._gl_draw_rect(ok_x + ok_w - 2, ok_y, 2, ok_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
             self._gl_draw_text("OK", ok_x + 46, ok_y + 8, (238, 248, 238), self.font_mono)
+
+        elif self.menu_mode == "package_summary":
+            panel_w = min(980, self.size[0] - 80)
+            panel_h = min(560, self.size[1] - 140)
+            panel_x = self.size[0] // 2 - panel_w // 2
+            panel_y = self.size[1] // 2 - panel_h // 2
+            self._gl_draw_rect(panel_x, panel_y, panel_w, panel_h, (20 / 255.0, 28 / 255.0, 40 / 255.0, 0.95))
+            self._gl_draw_rect(panel_x, panel_y, panel_w, 2, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x, panel_y + panel_h - 2, panel_w, 2, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x, panel_y, 2, panel_h, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x + panel_w - 2, panel_y, 2, panel_h, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+
+            line_h = max(16, self.font_small.get_linesize())
+            text_x = panel_x + 24
+            text_y = panel_y + 48
+            text_w = panel_w - 48
+            max_lines = max(1, (panel_h - 116) // line_h)
+            source_lines = self.package_summary_lines if self.package_summary_lines else ["(no details)"]
+            render_lines: List[str] = []
+            for raw in source_lines:
+                wrapped = self._wrap_menu_hint_lines(raw, text_w)
+                if wrapped:
+                    render_lines.extend(wrapped)
+                else:
+                    render_lines.append(raw)
+            if len(render_lines) > max_lines:
+                render_lines = render_lines[: max_lines - 1] + ["..."]
+
+            for idx, line in enumerate(render_lines):
+                self._gl_draw_text(line, text_x, text_y + idx * line_h, (220, 220, 220), self.font_small)
+
+            ok_x, ok_y, ok_w, ok_h = self._package_summary_ok_button_rect()
+            self._gl_draw_rect(ok_x, ok_y, ok_w, ok_h, (48 / 255.0, 104 / 255.0, 62 / 255.0, 0.95))
+            self._gl_draw_rect(ok_x, ok_y, ok_w, 2, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(ok_x, ok_y + ok_h - 2, ok_w, 2, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(ok_x, ok_y, 2, ok_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(ok_x + ok_w - 2, ok_y, 2, ok_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_text("OK", ok_x + 46, ok_y + 8, (238, 248, 238), self.font_mono)
+
+        elif self.menu_mode == "file_browser_create_folder":
+            panel_x, panel_y, panel_w, panel_h, create_x, cancel_x, btn_y, btn_h = self._create_folder_prompt_button_rects()
+            btn_w = 140
+            self._gl_draw_rect(panel_x, panel_y, panel_w, panel_h, (20 / 255.0, 28 / 255.0, 40 / 255.0, 0.95))
+            self._gl_draw_rect(panel_x, panel_y, panel_w, 2, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x, panel_y + panel_h - 2, panel_w, 2, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x, panel_y, 2, panel_h, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+            self._gl_draw_rect(panel_x + panel_w - 2, panel_y, 2, panel_h, (78 / 255.0, 96 / 255.0, 120 / 255.0, 1.0))
+
+            self._gl_draw_text(
+                "Enter folder name for scenery distribution:",
+                panel_x + 24,
+                panel_y + 44,
+                (200, 220, 236),
+                self.font_small,
+            )
+
+            field_x = panel_x + 24
+            field_y = panel_y + 82
+            field_w = panel_w - 48
+            field_h = 42
+            self._gl_draw_rect(field_x, field_y, field_w, field_h, (10 / 255.0, 14 / 255.0, 22 / 255.0, 0.95))
+            self._gl_draw_rect(field_x, field_y, field_w, 2, (108 / 255.0, 136 / 255.0, 170 / 255.0, 1.0))
+            self._gl_draw_rect(field_x, field_y + field_h - 2, field_w, 2, (108 / 255.0, 136 / 255.0, 170 / 255.0, 1.0))
+            self._gl_draw_rect(field_x, field_y, 2, field_h, (108 / 255.0, 136 / 255.0, 170 / 255.0, 1.0))
+            self._gl_draw_rect(field_x + field_w - 2, field_y, 2, field_h, (108 / 255.0, 136 / 255.0, 170 / 255.0, 1.0))
+
+            input_value = self.file_browser_new_folder_name if self.file_browser_new_folder_name else ""
+            if not input_value:
+                input_value = "(type folder name)"
+                input_color = (130, 145, 165)
+            else:
+                input_color = (235, 240, 245)
+            max_chars = max(10, (field_w - 18) // 11)
+            if len(input_value) > max_chars:
+                input_value = "..." + input_value[-(max_chars - 3):]
+            self._gl_draw_text(input_value, field_x + 10, field_y + 11, input_color, self.font_mono)
+
+            self._gl_draw_rect(create_x, btn_y, btn_w, btn_h, (48 / 255.0, 104 / 255.0, 62 / 255.0, 0.95))
+            self._gl_draw_rect(create_x, btn_y, btn_w, 2, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(create_x, btn_y + btn_h - 2, btn_w, 2, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(create_x, btn_y, 2, btn_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_rect(create_x + btn_w - 2, btn_y, 2, btn_h, (132 / 255.0, 210 / 255.0, 152 / 255.0, 1.0))
+            self._gl_draw_text("Create", create_x + 30, btn_y + 8, (238, 248, 238), self.font_mono)
+
+            self._gl_draw_rect(cancel_x, btn_y, btn_w, btn_h, (104 / 255.0, 52 / 255.0, 52 / 255.0, 0.95))
+            self._gl_draw_rect(cancel_x, btn_y, btn_w, 2, (220 / 255.0, 140 / 255.0, 140 / 255.0, 1.0))
+            self._gl_draw_rect(cancel_x, btn_y + btn_h - 2, btn_w, 2, (220 / 255.0, 140 / 255.0, 140 / 255.0, 1.0))
+            self._gl_draw_rect(cancel_x, btn_y, 2, btn_h, (220 / 255.0, 140 / 255.0, 140 / 255.0, 1.0))
+            self._gl_draw_rect(cancel_x + btn_w - 2, btn_y, 2, btn_h, (220 / 255.0, 140 / 255.0, 140 / 255.0, 1.0))
+            self._gl_draw_text("Cancel", cancel_x + 32, btn_y + 8, (248, 238, 238), self.font_mono)
 
         elif self.menu_mode == "scene_switch_confirm":
             panel_w = 860

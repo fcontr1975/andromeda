@@ -53,10 +53,21 @@ python3 andromeda.py /path/to/tile.stg --material-map /path/to/material_map.json
 ## First Launch Checklist
 
 1. Press `Esc` to open the menu.
-2. Set **Flightgear Location** to your FG data root (must contain `Textures` and `Materials`).
-3. Load your target `.stg` with **Load STG**.
+2. Go to **Options -> Configuration -> Flightgear Location** and set your FG data root (must contain `Textures` and `Materials`).
+3. Go to **File -> Load** and open your target `.stg`.
 4. Use **Add Object** to place models.
-5. Save with **Save** (or **Save As STG**).
+5. Save with **File -> Save** (or **File -> Save As**).
+
+## Scenery Packaging
+
+You can create a shareable scenery package directly from the current STG scene:
+
+1. Open **File -> Create Scenery Package**.
+2. In the folder requester, navigate to the destination.
+3. Optional: use **[Create Folder]** to create a new distribution folder and enter its name.
+4. Choose **[Select This Folder]**.
+5. Andromeda copies discovered dependencies (STG references plus related XML/AC/texture assets), writes `scenery_readme.txt` from the distribution template, and creates `<selected_folder>.zip`.
+6. Review the summary dialog (**Zip Location**, **File contents**, **File Size**) and click **OK** to return to the menu.
 
 ## Core Controls
 
@@ -105,6 +116,8 @@ Select language/help files from the in-app menu.
 
 ## Recent Improvements
 
+- Scenery packaging workflow: **File -> Create Scenery Package** now builds a distributable zip from current STG dependencies and shows a post-build summary dialog.
+- Package requester quality-of-life: added **[Create Folder]** with in-app folder-name prompt, so you can make a distribution folder without leaving Andromeda.
 - Windows path picker update: when browsing upward to filesystem root, drive letters are now listed so you can switch drives while selecting FlightGear paths.
 - Windows editing performance update: object move/rotate operations now include faster preview behavior, shadow rebuild throttling during active edits, and render-stage timing metrics.
 - Shadow sampling acceleration: static-scene terrain now uses a spatial index with adaptive cell sizing and cached footprint candidates for faster projected-shadow updates.

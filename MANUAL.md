@@ -52,12 +52,12 @@ python3 andromeda.py /path/to/tile.stg --material-map /path/to/material_map.json
 ## 4. First 5 Minutes Workflow
 
 1. Press `Esc` and open the main menu.
-2. Go to **Flightgear Location** and choose FGDATA root.
-3. Use **Load STG** to open your target tile.
+2. Go to **Options -> Configuration -> Flightgear Location** and choose FGDATA root.
+3. Go to **File -> Load** to open your target tile.
 4. Press `Space` for **Add Object**.
 5. Pick a category and model.
 6. Place/adjust object with keyboard or mouse drag.
-7. Save with `Ctrl+S` or menu **Save**.
+7. Save with `Ctrl+S` or menu **File -> Save**.
 
 ## 5. Camera and Navigation
 
@@ -111,21 +111,25 @@ This is the fastest way to do creative fine placement.
 
 Main menu includes:
 
-- Load STG
-- Save / Save As STG
-- Menu Language
-- Help Text File / Reload Help Text
-- Flightgear Location
-- Custom Scenery Paths
-- Grid Settings
+- File: Load, Save, Save As, Create Scenery Package
 - Add Object
-- Preview Panel Location
-- Set Missing Material Color
-- Toggle Textured View
-- Nudge and camera clipping/view setup
-- Change Keyboard bindings
+- Options -> UI: Menu Language, Help Text File, Reload Help Text, Preview Panel Location, Missing Material Color
+- Options -> Configuration: Flightgear Location, Custom Scenery Paths, Keyboard bindings
+- Options -> View: textured toggle, camera start view, camera clipping
+- Options -> Object Placement: Grid settings, nudge mode, nudge distance, nudge repeat
 
-## 9. Localization Files
+## 9. Creating a Scenery Package
+
+Use this when you want to distribute the scenery used by the current STG:
+
+1. Open **File -> Create Scenery Package**.
+2. In the destination folder requester, browse to where you want the package output.
+3. Optional: choose **[Create Folder]**, type a folder name, and press Enter (or click **Create**).
+4. Choose **[Select This Folder]**.
+5. Andromeda copies referenced scenery assets and creates `<selected_folder>.zip`.
+6. A summary modal shows zip location, included files, and file size. Click **OK** to return to menu.
+
+## 10. Localization Files
 
 UI files:
 
@@ -143,7 +147,7 @@ Help files:
 
 You can select these in-app from the menu.
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### Textures are missing or magenta fallback is visible
 

@@ -85,25 +85,9 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.show_menu = False
         self.menu_mode = "main"
         self.main_menu_items = [
-            "Load STG",
-            "Save",
-            "Save As STG",
-            "Menu Language",
-            "Help Text File",
-            "Reload Help Text",
-            "Flightgear Location",
-            "Custom Scenery Paths",
-            "Grid Settings",
+            "File",
             "Add Object",
-            "Preview Panel Location",
-            "Set Missing Material Color",
-            "Toggle Textured View",
-            "Set Object Nudge Distance",
-            "Set Object Nudge Repeat",
-            "Toggle Nudge Mode",
-            "Set Camera Start View",
-            "Set Camera Clipping",
-            "Change Keyboard bindings",
+            "Options",
             "Exit",
         ]
         self.main_menu_index = 0
@@ -139,6 +123,7 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.file_browser_index: int = 0
         self.file_browser_scroll_start: int = 0
         self.file_browser_save_name: str = ""
+        self.file_browser_new_folder_name: str = ""
         self.file_browser_overwrite_target: str = ""
         self.file_browser_last_click_index: int = -1
         self.file_browser_last_click_path: str = ""
@@ -147,6 +132,9 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.save_confirm_title: str = ""
         self.save_confirm_message: str = ""
         self.save_confirm_return_mode: str = ""
+        self.package_summary_title: str = ""
+        self.package_summary_lines: List[str] = []
+        self.package_summary_return_mode: str = ""
         self.scene_switch_confirm_message: str = ""
         self.frame_projected_model_labels: Optional[List[Tuple[float, float, float, str, bool, int]]] = None
 
