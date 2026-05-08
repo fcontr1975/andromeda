@@ -11,9 +11,11 @@ import math
 import os
 import shlex
 import shutil
+import threading
 import time
 import xml.etree.ElementTree as ET
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import pygame
@@ -23,6 +25,7 @@ from andromeda_backend import (
     ObjectCatalogEntry,
     STGModelInstance,
     ValidationStats,
+    associated_locked_layer_stg_paths,
     build_object_catalog,
     compose_scene_mesh,
     ecef_to_geodetic,
@@ -44,6 +47,16 @@ if TYPE_CHECKING:
 
 
 class SceneMixin:
+    def _read_only_layer_visibility_map(self: "BTGDisplayApp") -> Dict[str, bool]:
+        return {
+            "objects": bool(getattr(self, "show_read_only_objects", True)),
+            "buildings": bool(getattr(self, "show_read_only_buildings", True)),
+            "roads": bool(getattr(self, "show_read_only_roads", True)),
+            "pylons": bool(getattr(self, "show_read_only_pylons", True)),
+            "details": bool(getattr(self, "show_read_only_details", True)),
+            "trees": bool(getattr(self, "show_read_only_trees", True)),
+        }
+
     def _rebuild_static_surface_index(self: "BTGDisplayApp") -> None:
         mesh = self.scene_static_merged_mesh
         self.static_surface_triangles = []
@@ -185,6 +198,24 @@ class SceneMixin:
             self.model_angle_step_index,
             self.object_nudge_step_m,
             self.object_nudge_camera_relative,
+            self.lock_read_only_objects,
+            self.lock_read_only_buildings,
+            self.lock_read_only_roads,
+            self.lock_read_only_pylons,
+            self.lock_read_only_details,
+            self.lock_read_only_trees,
+            self.show_read_only_objects,
+            self.show_read_only_buildings,
+            self.show_read_only_roads,
+            self.show_read_only_pylons,
+            self.show_read_only_details,
+            self.show_read_only_trees,
+            self.show_read_only_objects_labels,
+            self.show_read_only_buildings_labels,
+            self.show_read_only_roads_labels,
+            self.show_read_only_pylons_labels,
+            self.show_read_only_details_labels,
+            self.show_read_only_trees_labels,
             self.object_nudge_repeat_delay_s,
             self.object_nudge_repeat_interval_s,
             self.missing_material_color_rgb,
@@ -272,14 +303,91 @@ class SceneMixin:
             "entries": 0,
             "btg_objects_loaded": 0,
             "model_objects_loaded": 0,
+            "readonly_model_objects_loaded": 0,
+            "tree_lists_loaded": 0,
+            "tree_points_loaded": 0,
             "proxy_objects_loaded": 0,
             "skipped": 0,
+            "timing_ms": {
+                "parse_stg": 0.0,
+                "load_ac": 0.0,
+                "load_btg": 0.0,
+                "trees": 0.0,
+                "compose": 0.0,
+            },
         }
         self._set_status_t(
             "status.renderer_no_scene",
             "Renderer: {renderer} | No scene loaded",
             renderer=self.renderer_name,
         )
+
+    def _load_stage_timing_from_debug(self: "BTGDisplayApp", stg_debug: Optional[Dict[str, object]]) -> Dict[str, float]:
+        default = {
+            "parse_stg": 0.0,
+            "load_ac": 0.0,
+            "load_btg": 0.0,
+            "trees": 0.0,
+            "compose": 0.0,
+        }
+        if not isinstance(stg_debug, dict):
+            return default
+        timing = stg_debug.get("timing_ms")
+        if not isinstance(timing, dict):
+            return default
+        for key in default:
+            default[key] = float(timing.get(key, 0.0))
+        return default
+
+    def _print_load_timing_breakdown(
+        self: "BTGDisplayApp",
+        label: str,
+        scene_path: str,
+        stage_timing_ms: Dict[str, float],
+        total_ms: float,
+    ) -> None:
+        scene_name = os.path.basename(scene_path) if scene_path else "(unknown)"
+        parse_ms_raw = float(stage_timing_ms.get("parse_stg", 0.0))
+        ac_ms_raw = float(stage_timing_ms.get("load_ac", 0.0))
+        btg_ms_raw = float(stage_timing_ms.get("load_btg", 0.0))
+        trees_ms_raw = float(stage_timing_ms.get("trees", 0.0))
+        compose_ms_raw = float(stage_timing_ms.get("compose", 0.0))
+
+        parse_ms = parse_ms_raw
+        ac_ms = ac_ms_raw
+        btg_ms = btg_ms_raw
+        trees_ms = trees_ms_raw
+        compose_ms = compose_ms_raw
+
+        fixed_ms = parse_ms + compose_ms
+        variable_ms = ac_ms + btg_ms + trees_ms
+        variable_budget_ms = max(0.0, float(total_ms) - fixed_ms)
+        scaled = False
+        if variable_ms > variable_budget_ms + 1e-6 and variable_ms > 1e-9:
+            scale = variable_budget_ms / variable_ms
+            ac_ms *= scale
+            btg_ms *= scale
+            trees_ms *= scale
+            scaled = True
+
+        accounted_ms = parse_ms + ac_ms + btg_ms + trees_ms + compose_ms
+        overhead_ms = max(0.0, float(total_ms) - accounted_ms)
+
+        print("[LOAD PROFILE] ------------------------------------------------------------")
+        print(f"[LOAD PROFILE] {label}: {scene_name}")
+        print(f"[LOAD PROFILE] parse STG : {parse_ms:.2f} ms")
+        print(f"[LOAD PROFILE] load AC   : {ac_ms:.2f} ms")
+        print(f"[LOAD PROFILE] load BTG  : {btg_ms:.2f} ms")
+        print(f"[LOAD PROFILE] trees     : {trees_ms:.2f} ms")
+        print(f"[LOAD PROFILE] compose   : {compose_ms:.2f} ms")
+        print(f"[LOAD PROFILE] overhead  : {overhead_ms:.2f} ms")
+        print(f"[LOAD PROFILE] total     : {float(total_ms):.2f} ms")
+        if scaled:
+            print("[LOAD PROFILE] note      : stage times wall-normalized for parallel worker additivity")
+            print(
+                f"[LOAD PROFILE] raw stage : AC={ac_ms_raw:.2f} BTG={btg_ms_raw:.2f} trees={trees_ms_raw:.2f} ms"
+            )
+        print("[LOAD PROFILE] ------------------------------------------------------------")
 
     def _prepare_scene_switch(self: "BTGDisplayApp", target_path: str, prompt_on_switch: bool = True) -> bool:
         if not self._scene_is_loaded():
@@ -314,8 +422,11 @@ class SceneMixin:
     def load_file(self: "BTGDisplayApp", path: str, prompt_on_switch: bool = True) -> None:
         if not self._prepare_scene_switch(path, prompt_on_switch=prompt_on_switch):
             return
+        load_start = time.perf_counter()
         try:
+            base_btg_start = time.perf_counter()
             mesh, stats = validate_and_load_btg(path)
+            base_btg_ms = (time.perf_counter() - base_btg_start) * 1000.0
         except Exception as exc:
             self._set_status_t("status.load_failed_fmt", "Load failed: {error}", error=exc)
             print(f"Failed to load {path}: {exc}")
@@ -326,6 +437,7 @@ class SceneMixin:
             mesh,
             self.flightgear_root,
             self.shared_model_mesh_cache,
+            layer_visibility=self._read_only_layer_visibility_map(),
         )
         self.last_stg_debug = stg_debug
 
@@ -340,7 +452,7 @@ class SceneMixin:
             self.loaded_stg_model_entry_indices = {
                 int(inst.stg_entry_index)
                 for inst in stg_model_instances
-                if inst.stg_entry_index is not None
+                if inst.stg_entry_index is not None and not getattr(inst, "is_read_only", False)
             }
         else:
             self.loaded_stg_entry_source_path = ""
@@ -349,6 +461,7 @@ class SceneMixin:
         self.selected_model_instance_index = None
         self.crosshair_hover_model_index = None
 
+        compose_start = time.perf_counter()
         scene_mesh = compose_scene_mesh(
             self.scene_static_merged_mesh,
             [],
@@ -357,6 +470,7 @@ class SceneMixin:
             0.0,
             0.0,
         )
+        compose_ms = (time.perf_counter() - compose_start) * 1000.0
 
         self.mesh = scene_mesh
         self.stats = stats
@@ -375,11 +489,20 @@ class SceneMixin:
         )
         print(f"Loaded BTG: {path}")
         print(f"Warnings: {len(stats.warnings)} | Errors: {len(stats.errors)}")
+        stage_timing = self._load_stage_timing_from_debug(stg_debug)
+        stage_timing["load_btg"] = float(stage_timing.get("load_btg", 0.0)) + base_btg_ms
+        stage_timing["compose"] = compose_ms
+        stg_debug["timing_ms"] = dict(stage_timing)
+        total_ms = (time.perf_counter() - load_start) * 1000.0
+        self._print_load_timing_breakdown("BTG Load", path, stage_timing, total_ms)
 
     def load_stg_file(self: "BTGDisplayApp", stg_path: str, prompt_on_switch: bool = True) -> None:
         if not self._prepare_scene_switch(stg_path, prompt_on_switch=prompt_on_switch):
             return
+        load_start = time.perf_counter()
+        parse_main_start = time.perf_counter()
         entries = parse_stg_file(stg_path)
+        parse_main_ms = (time.perf_counter() - parse_main_start) * 1000.0
         if not entries:
             self._set_status_t("status.load_failed_no_stg_entries", "Load failed: STG has no object entries")
             return
@@ -414,7 +537,9 @@ class SceneMixin:
             return
 
         try:
+            base_btg_start = time.perf_counter()
             mesh, stats = validate_and_load_btg(base_btg_path)
+            base_btg_ms = (time.perf_counter() - base_btg_start) * 1000.0
         except Exception as exc:
             self._set_status_t("status.load_failed_fmt", "Load failed: {error}", error=exc)
             print(f"Failed to load STG base BTG {base_btg_path}: {exc}")
@@ -427,7 +552,133 @@ class SceneMixin:
             base_btg_path,
             self.flightgear_root,
             self.shared_model_mesh_cache,
+            instance_read_only=False,
         )
+        stg_timing = stg_debug.setdefault(
+            "timing_ms",
+            {
+                "parse_stg": 0.0,
+                "load_ac": 0.0,
+                "load_btg": 0.0,
+                "trees": 0.0,
+            },
+        )
+        stg_timing["parse_stg"] = float(stg_timing.get("parse_stg", 0.0)) + parse_main_ms
+
+        readonly_stg_paths = [
+            (candidate_path, candidate_layer)
+            for candidate_path, candidate_layer in associated_locked_layer_stg_paths(
+                base_btg_path,
+                layer_visibility=self._read_only_layer_visibility_map(),
+            )
+            if os.path.abspath(candidate_path) != os.path.abspath(stg_path)
+        ]
+        model_cache_lock = threading.Lock()
+
+        def _merge_readonly_result(
+            readonly_static: List[BTGMesh],
+            readonly_models: List[STGModelInstance],
+            readonly_debug: Dict[str, object],
+        ) -> None:
+            stg_static_meshes.extend(readonly_static)
+            stg_model_instances.extend(readonly_models)
+            stg_debug["entries"] = int(stg_debug.get("entries", 0)) + int(readonly_debug.get("entries", 0))
+            stg_debug["btg_objects_loaded"] = int(stg_debug.get("btg_objects_loaded", 0)) + int(readonly_debug.get("btg_objects_loaded", 0))
+            stg_debug["model_objects_loaded"] = int(stg_debug.get("model_objects_loaded", 0)) + int(readonly_debug.get("model_objects_loaded", 0))
+            stg_debug["readonly_model_objects_loaded"] = int(stg_debug.get("readonly_model_objects_loaded", 0)) + int(
+                readonly_debug.get("readonly_model_objects_loaded", 0)
+            )
+            stg_debug["tree_lists_loaded"] = int(stg_debug.get("tree_lists_loaded", 0)) + int(
+                readonly_debug.get("tree_lists_loaded", 0)
+            )
+            stg_debug["tree_points_loaded"] = int(stg_debug.get("tree_points_loaded", 0)) + int(
+                readonly_debug.get("tree_points_loaded", 0)
+            )
+            stg_debug["proxy_objects_loaded"] = int(stg_debug.get("proxy_objects_loaded", 0)) + int(
+                readonly_debug.get("proxy_objects_loaded", 0)
+            )
+            stg_debug["skipped"] = int(stg_debug.get("skipped", 0)) + int(readonly_debug.get("skipped", 0))
+            readonly_timing = readonly_debug.get("timing_ms") if isinstance(readonly_debug, dict) else None
+            if isinstance(readonly_timing, dict):
+                aggregate_timing = stg_debug.setdefault(
+                    "timing_ms",
+                    {"parse_stg": 0.0, "load_ac": 0.0, "load_btg": 0.0, "trees": 0.0},
+                )
+                for timing_key in ("parse_stg", "load_ac", "load_btg", "trees"):
+                    aggregate_timing[timing_key] = float(aggregate_timing.get(timing_key, 0.0)) + float(
+                        readonly_timing.get(timing_key, 0.0)
+                    )
+
+        readonly_worker_count = min(max(1, os.cpu_count() or 1), len(readonly_stg_paths), 8)
+        if readonly_worker_count > 1:
+            indexed_results: Dict[int, Tuple[List[BTGMesh], List[STGModelInstance], Dict[str, object]]] = {}
+
+            def _load_readonly_source(
+                index: int,
+                readonly_stg_path: str,
+                readonly_layer: str,
+            ) -> Tuple[int, List[BTGMesh], List[STGModelInstance], Dict[str, object]]:
+                parse_start = time.perf_counter()
+                readonly_entries = parse_stg_file(readonly_stg_path)
+                parse_ms = (time.perf_counter() - parse_start) * 1000.0
+                readonly_static, readonly_models, readonly_debug = load_stg_objects_from_entries(
+                    readonly_stg_path,
+                    mesh,
+                    readonly_entries,
+                    base_btg_path,
+                    self.flightgear_root,
+                    self.shared_model_mesh_cache,
+                    instance_read_only=True,
+                    read_only_layer=readonly_layer,
+                    shared_model_cache_lock=model_cache_lock,
+                )
+                readonly_timing = readonly_debug.setdefault(
+                    "timing_ms",
+                    {"parse_stg": 0.0, "load_ac": 0.0, "load_btg": 0.0, "trees": 0.0},
+                )
+                readonly_timing["parse_stg"] = float(readonly_timing.get("parse_stg", 0.0)) + parse_ms
+                return (index, readonly_static, readonly_models, readonly_debug)
+
+            with ThreadPoolExecutor(max_workers=readonly_worker_count) as executor:
+                futures = [
+                    executor.submit(_load_readonly_source, index, readonly_stg_path, readonly_layer)
+                    for index, (readonly_stg_path, readonly_layer) in enumerate(readonly_stg_paths)
+                ]
+                for future in as_completed(futures):
+                    try:
+                        index, readonly_static, readonly_models, readonly_debug = future.result()
+                    except Exception:
+                        stg_debug["skipped"] = int(stg_debug.get("skipped", 0)) + 1
+                        continue
+                    indexed_results[index] = (readonly_static, readonly_models, readonly_debug)
+
+            for index in range(len(readonly_stg_paths)):
+                result = indexed_results.get(index)
+                if result is None:
+                    continue
+                _merge_readonly_result(*result)
+        else:
+            for readonly_stg_path, readonly_layer in readonly_stg_paths:
+                parse_start = time.perf_counter()
+                readonly_entries = parse_stg_file(readonly_stg_path)
+                parse_ms = (time.perf_counter() - parse_start) * 1000.0
+                readonly_static, readonly_models, readonly_debug = load_stg_objects_from_entries(
+                    readonly_stg_path,
+                    mesh,
+                    readonly_entries,
+                    base_btg_path,
+                    self.flightgear_root,
+                    self.shared_model_mesh_cache,
+                    instance_read_only=True,
+                    read_only_layer=readonly_layer,
+                    shared_model_cache_lock=model_cache_lock,
+                )
+                readonly_timing = readonly_debug.setdefault(
+                    "timing_ms",
+                    {"parse_stg": 0.0, "load_ac": 0.0, "load_btg": 0.0, "trees": 0.0},
+                )
+                readonly_timing["parse_stg"] = float(readonly_timing.get("parse_stg", 0.0)) + parse_ms
+                _merge_readonly_result(readonly_static, readonly_models, readonly_debug)
         self.last_stg_debug = stg_debug
 
         self.scene_base_mesh = mesh
@@ -439,12 +690,13 @@ class SceneMixin:
         self.loaded_stg_model_entry_indices = {
             int(inst.stg_entry_index)
             for inst in stg_model_instances
-            if inst.stg_entry_index is not None
+            if inst.stg_entry_index is not None and not getattr(inst, "is_read_only", False)
         }
         self._clear_add_object_preview()
         self.selected_model_instance_index = None
         self.crosshair_hover_model_index = None
 
+        compose_start = time.perf_counter()
         scene_mesh = compose_scene_mesh(
             self.scene_static_merged_mesh,
             [],
@@ -453,6 +705,7 @@ class SceneMixin:
             0.0,
             0.0,
         )
+        compose_ms = (time.perf_counter() - compose_start) * 1000.0
 
         self.mesh = scene_mesh
         self.stats = stats
@@ -471,6 +724,12 @@ class SceneMixin:
         )
         print(f"Loaded STG: {stg_path} (base BTG: {base_btg_path})")
         print(f"Warnings: {len(stats.warnings)} | Errors: {len(stats.errors)}")
+        stage_timing = self._load_stage_timing_from_debug(stg_debug)
+        stage_timing["load_btg"] = float(stage_timing.get("load_btg", 0.0)) + base_btg_ms
+        stage_timing["compose"] = compose_ms
+        stg_debug["timing_ms"] = dict(stage_timing)
+        total_ms = (time.perf_counter() - load_start) * 1000.0
+        self._print_load_timing_breakdown("STG Load", stg_path, stage_timing, total_ms)
 
     def _resolve_active_stg_path(self: "BTGDisplayApp", require_exists: bool = True) -> str:
         stg_path = ""
@@ -572,6 +831,8 @@ class SceneMixin:
         replacement_by_entry_index: Dict[int, str] = {}
         append_lines: List[str] = []
         for instance in self.scene_model_instances:
+            if getattr(instance, "is_read_only", False):
+                continue
             if not instance.source_path:
                 continue
             line = _format_instance_line(instance)
@@ -658,7 +919,9 @@ class SceneMixin:
             self.loaded_stg_model_entry_indices = {
                 int(inst.stg_entry_index)
                 for inst in self.scene_model_instances
-                if inst.stg_entry_index is not None and int(inst.stg_entry_index) >= 0
+                if inst.stg_entry_index is not None
+                and int(inst.stg_entry_index) >= 0
+                and not getattr(inst, "is_read_only", False)
             }
 
         try:

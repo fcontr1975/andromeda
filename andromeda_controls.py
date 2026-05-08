@@ -26,6 +26,66 @@ if TYPE_CHECKING:
 
 
 class ControlsMixin:
+    def _model_instance_lock_layer(self: "BTGDisplayApp", instance: STGModelInstance) -> str:
+        layer = str(getattr(instance, "read_only_layer", "") or "").strip().lower()
+        if layer in {"objects", "buildings", "roads", "pylons", "details", "trees"}:
+            return layer
+        return "objects"
+
+    def _is_model_instance_locked(self: "BTGDisplayApp", instance: STGModelInstance) -> bool:
+        if not bool(getattr(instance, "is_read_only", False)):
+            return False
+
+        layer = self._model_instance_lock_layer(instance)
+        if layer == "trees":
+            return bool(getattr(self, "lock_read_only_trees", True))
+        if layer == "details":
+            return bool(getattr(self, "lock_read_only_details", True))
+        if layer == "pylons":
+            return bool(getattr(self, "lock_read_only_pylons", True))
+        if layer == "roads":
+            return bool(getattr(self, "lock_read_only_roads", True))
+        if layer == "buildings":
+            return bool(getattr(self, "lock_read_only_buildings", True))
+        return bool(getattr(self, "lock_read_only_objects", True))
+
+    def _set_layer_locked_status(self: "BTGDisplayApp", instance: STGModelInstance) -> None:
+        layer = self._model_instance_lock_layer(instance)
+        if layer == "trees":
+            self._set_status_t(
+                "status.selected_model_layer_locked_trees",
+                "Selected model is in a locked layer (UI / Layers / Trees Editability)",
+            )
+            return
+        if layer == "details":
+            self._set_status_t(
+                "status.selected_model_layer_locked_details",
+                "Selected model is in a locked layer (UI / Layers / Details Editability)",
+            )
+            return
+        if layer == "pylons":
+            self._set_status_t(
+                "status.selected_model_layer_locked_pylons",
+                "Selected model is in a locked layer (UI / Layers / Pylons Editability)",
+            )
+            return
+        if layer == "roads":
+            self._set_status_t(
+                "status.selected_model_layer_locked_roads",
+                "Selected model is in a locked layer (UI / Layers / Roads Editability)",
+            )
+            return
+        if layer == "buildings":
+            self._set_status_t(
+                "status.selected_model_layer_locked_buildings",
+                "Selected model is in a locked layer (UI / Layers / Buildings Editability)",
+            )
+            return
+        self._set_status_t(
+            "status.selected_model_layer_locked_objects",
+            "Selected model is in a locked layer (UI / Layers / Objects Editability)",
+        )
+
     def _fast_remove_model_instance_from_mesh(self: "BTGDisplayApp", removed_index: int, removed: STGModelInstance) -> bool:
         mesh = self.mesh
         if mesh is None:
@@ -116,6 +176,9 @@ class ControlsMixin:
             return
 
         instance = self.scene_model_instances[idx]
+        if self._is_model_instance_locked(instance):
+            self._set_layer_locked_status(instance)
+            return
         current_category = ""
         current_index: Optional[int] = None
 
@@ -410,7 +473,7 @@ class ControlsMixin:
         hover_radius_sq = 12.0 * 12.0
         best_idx: Optional[int] = None
         best_dist_sq = float("inf")
-        for _depth, label_x, label_y, _text, _is_ac_model, model_idx in labels:
+        for _depth, label_x, label_y, _text, _is_ac_model, _is_read_only, model_idx in labels:
             dx = label_x - float(sx)
             dy = label_y - float(sy)
             dist_sq = dx * dx + dy * dy
@@ -603,6 +666,9 @@ class ControlsMixin:
             return
 
         instance = self.scene_model_instances[idx]
+        if self._is_model_instance_locked(instance):
+            self._set_layer_locked_status(instance)
+            return
         instance.offset_x_m += dx_m
         instance.offset_y_m += dy_m
         instance.offset_z_m += dz_m
@@ -660,6 +726,7 @@ class ControlsMixin:
             source_path=clipboard.source_path,
             stg_directive=clipboard.stg_directive,
             stg_entry_index=None,
+            is_read_only=False,
             offset_yaw_deg=clipboard.offset_yaw_deg,
             offset_pitch_deg=clipboard.offset_pitch_deg,
             offset_roll_deg=clipboard.offset_roll_deg,
@@ -690,6 +757,11 @@ class ControlsMixin:
         idx = self.selected_model_instance_index
         if idx is None or not (0 <= idx < len(self.scene_model_instances)):
             self._set_status_t("status.no_model_selected_delete", "No model selected to delete")
+            return
+
+        selected = self.scene_model_instances[idx]
+        if self._is_model_instance_locked(selected):
+            self._set_layer_locked_status(selected)
             return
 
         removed = self.scene_model_instances.pop(idx)
@@ -862,6 +934,9 @@ class ControlsMixin:
             return
 
         instance = self.scene_model_instances[idx]
+        if self._is_model_instance_locked(instance):
+            self._set_layer_locked_status(instance)
+            return
         instance.offset_yaw_deg += yaw_delta
         instance.offset_pitch_deg += pitch_delta
         instance.offset_roll_deg += roll_delta
@@ -1436,6 +1511,9 @@ class ControlsMixin:
                     idx = self.selected_model_instance_index
                     if idx is not None and 0 <= idx < len(self.scene_model_instances):
                         inst = self.scene_model_instances[idx]
+                        if self._is_model_instance_locked(inst):
+                            self._set_layer_locked_status(inst)
+                            continue
                         self.clipboard_instance = STGModelInstance(
                             template_mesh=inst.template_mesh,
                             origin_enu=inst.origin_enu,
@@ -1446,6 +1524,8 @@ class ControlsMixin:
                             source_path=inst.source_path,
                             stg_directive=inst.stg_directive,
                             stg_entry_index=inst.stg_entry_index,
+                            is_read_only=inst.is_read_only,
+                            read_only_layer=getattr(inst, "read_only_layer", ""),
                             render_anchor_enu=inst.render_anchor_enu,
                             offset_yaw_deg=inst.offset_yaw_deg,
                             offset_pitch_deg=inst.offset_pitch_deg,
@@ -1544,14 +1624,22 @@ class ControlsMixin:
                         self.selected_model_instance_index = idx
                         inst = self.scene_model_instances[idx]
                         kind = "ac" if inst.is_ac_model else "model"
+                        ro_state = ""
+                        if getattr(inst, "is_read_only", False):
+                            layer_name = self._model_instance_lock_layer(inst)
+                            if self._is_model_instance_locked(inst):
+                                ro_state = f" [read-only {layer_name}, locked]"
+                            else:
+                                ro_state = f" [read-only {layer_name}, unlocked]"
                         self._set_status_t(
                             "status.selected_object_fmt",
-                            "Selected model M{index} [{kind}] {path}",
+                            "Selected model M{index} [{kind}] {path}{state}",
                             index=f"{idx:03d}",
                             kind=kind,
                             path=inst.source_path,
+                            state=ro_state,
                         )
-                        if not self.mouse_captured:
+                        if not self.mouse_captured and not self._is_model_instance_locked(inst):
                             self.mouse_edit_drag_active = True
                             self.mouse_edit_drag_started = False
                             self.mouse_edit_drag_accum_px_x = 0.0
@@ -1560,6 +1648,7 @@ class ControlsMixin:
                         not self.mouse_captured
                         and self.selected_model_instance_index is not None
                         and 0 <= self.selected_model_instance_index < len(self.scene_model_instances)
+                        and not self._is_model_instance_locked(self.scene_model_instances[self.selected_model_instance_index])
                     ):
                         # Allow drag-to-edit on the currently selected model even when the
                         # click starts away from the label anchor.

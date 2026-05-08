@@ -1163,22 +1163,49 @@ class RenderMixin:
         pygame.draw.line(self.screen, (255, 255, 255), (cx - half, cy), (cx + half, cy), 1)
         pygame.draw.line(self.screen, (255, 255, 255), (cx, cy - half), (cx, cy + half), 1)
 
-    def _model_label_text(self: "BTGDisplayApp", instance_index: int, source_path: str, is_ac_model: bool) -> str:
+    def _model_label_text(
+        self: "BTGDisplayApp",
+        instance_index: int,
+        source_path: str,
+        is_ac_model: bool,
+        is_read_only: bool,
+    ) -> str:
         normalized = source_path.replace("\\", "/") if source_path else ""
         base_name = os.path.basename(normalized) if normalized else "<unknown>"
         kind = "ac" if is_ac_model else "model"
-        return f"M{instance_index:03d} [{kind}] {base_name}"
+        ro_suffix = " [RO]" if is_read_only else ""
+        return f"M{instance_index:03d} [{kind}] {base_name}{ro_suffix}"
 
-    def _collect_projected_model_labels(self: "BTGDisplayApp") -> List[Tuple[float, float, float, str, bool, int]]:
+    def _is_instance_label_visible(self: "BTGDisplayApp", instance: STGModelInstance) -> bool:
+        if not bool(getattr(instance, "is_read_only", False)):
+            return True
+
+        layer = str(getattr(instance, "read_only_layer", "") or "").strip().lower()
+        if layer == "trees":
+            return bool(getattr(self, "show_read_only_trees_labels", True))
+        if layer == "details":
+            return bool(getattr(self, "show_read_only_details_labels", True))
+        if layer == "pylons":
+            return bool(getattr(self, "show_read_only_pylons_labels", True))
+        if layer == "roads":
+            return bool(getattr(self, "show_read_only_roads_labels", True))
+        if layer == "buildings":
+            return bool(getattr(self, "show_read_only_buildings_labels", True))
+        return bool(getattr(self, "show_read_only_objects_labels", True))
+
+    def _collect_projected_model_labels(self: "BTGDisplayApp") -> List[Tuple[float, float, float, str, bool, bool, int]]:
         if not self.scene_model_instances:
             return []
 
         width, height = self.size
         cam = tuple(self.camera_pos)
         focal = (0.5 * float(height)) / math.tan(math.radians(self.fov_deg) * 0.5)
-        labels: List[Tuple[float, float, float, str, bool, int]] = []
+        labels: List[Tuple[float, float, float, str, bool, bool, int]] = []
 
         for idx, instance in enumerate(self.scene_model_instances):
+            if not self._is_instance_label_visible(instance):
+                continue
+
             anchor_world = instance.render_anchor_enu if instance.render_anchor_enu is not None else instance.origin_enu
             rel = (
                 anchor_world[0] - cam[0],
@@ -1203,8 +1230,9 @@ class RenderMixin:
             if sx < -220 or sx > width + 220 or sy < -40 or sy > height + 40:
                 continue
 
-            label_text = self._model_label_text(idx, instance.source_path, instance.is_ac_model)
-            labels.append((depth_key, sx, sy, label_text, instance.is_ac_model, idx))
+            is_read_only = bool(getattr(instance, "is_read_only", False))
+            label_text = self._model_label_text(idx, instance.source_path, instance.is_ac_model, is_read_only)
+            labels.append((depth_key, sx, sy, label_text, instance.is_ac_model, is_read_only, idx))
 
         labels.sort(key=lambda item: item[0], reverse=True)
         return labels
@@ -1214,6 +1242,7 @@ class RenderMixin:
         sx: float,
         sy: float,
         text: str,
+        read_only: bool = False,
         selected: bool = False,
     ) -> None:
         marker = "*" if selected else ""
@@ -1221,17 +1250,29 @@ class RenderMixin:
         if self.opengl_enabled:
             self._gl_begin_2d()
             text_w, _text_h = self.font_small.size(display_text)
-            dot_color = (0.45, 1.0, 0.45, 0.95) if selected else (1.0, 0.85, 0.15, 0.95)
+            if read_only:
+                dot_color = (1.0, 0.45, 0.35, 0.95) if selected else (1.0, 0.24, 0.22, 0.95)
+            else:
+                dot_color = (0.45, 1.0, 0.45, 0.95) if selected else (1.0, 0.85, 0.15, 0.95)
             self._gl_draw_rect(sx - 2, sy - 2, 5, 5, dot_color)
             self._gl_draw_rect(sx + 7, sy - 2, text_w + 14, 18, (0.04, 0.05, 0.08, 0.76))
-            text_color = (175, 255, 175) if selected else (250, 245, 225)
+            if read_only:
+                text_color = (255, 200, 190) if selected else (255, 165, 150)
+            else:
+                text_color = (175, 255, 175) if selected else (250, 245, 225)
             self._gl_draw_text(display_text, sx + 10, sy, text_color, self.font_small)
             self._gl_end_2d()
             return
 
-        dot_color = (115, 255, 115) if selected else (255, 215, 70)
+        if read_only:
+            dot_color = (255, 130, 112) if selected else (255, 70, 60)
+        else:
+            dot_color = (115, 255, 115) if selected else (255, 215, 70)
         pygame.draw.circle(self.screen, dot_color, (int(sx), int(sy)), 2)
-        text_color = (175, 255, 175) if selected else (250, 245, 225)
+        if read_only:
+            text_color = (255, 200, 190) if selected else (255, 165, 150)
+        else:
+            text_color = (175, 255, 175) if selected else (250, 245, 225)
         text_surf = self.font_small.render(display_text, True, text_color)
         tw, th = text_surf.get_size()
         bg = pygame.Rect(int(sx) + 7, int(sy) - 2, tw + 8, th + 4)
@@ -1249,28 +1290,34 @@ class RenderMixin:
         cx, cy = self._target_screen_xy()
         hover_radius_sq = 12.0 * 12.0
 
-        best_any: Optional[Tuple[float, float, float, str, bool, int, float]] = None
-        best_ac: Optional[Tuple[float, float, float, str, bool, int, float]] = None
-        for depth, sx, sy, text, is_ac_model, model_idx in labels:
+        best_any: Optional[Tuple[float, float, float, str, bool, bool, int, float]] = None
+        best_ac: Optional[Tuple[float, float, float, str, bool, bool, int, float]] = None
+        for depth, sx, sy, text, is_ac_model, is_read_only, model_idx in labels:
             dx = sx - cx
             dy = sy - cy
             dist_sq = dx * dx + dy * dy
             if dist_sq > hover_radius_sq:
                 continue
 
-            if best_any is None or dist_sq < best_any[6]:
-                best_any = (depth, sx, sy, text, is_ac_model, model_idx, dist_sq)
-            if is_ac_model and (best_ac is None or dist_sq < best_ac[6]):
-                best_ac = (depth, sx, sy, text, is_ac_model, model_idx, dist_sq)
+            if best_any is None or dist_sq < best_any[7]:
+                best_any = (depth, sx, sy, text, is_ac_model, is_read_only, model_idx, dist_sq)
+            if is_ac_model and (best_ac is None or dist_sq < best_ac[7]):
+                best_ac = (depth, sx, sy, text, is_ac_model, is_read_only, model_idx, dist_sq)
 
         if best_any is not None:
-            self.crosshair_hover_model_index = best_any[5]
+            self.crosshair_hover_model_index = best_any[6]
 
         if best_ac is None:
             return
 
-        _depth, sx, sy, text, _is_ac_model, model_idx, _dist_sq = best_ac
-        self._draw_single_label_chip(sx, sy, text, selected=(self.selected_model_instance_index == model_idx))
+        _depth, sx, sy, text, _is_ac_model, is_read_only, model_idx, _dist_sq = best_ac
+        self._draw_single_label_chip(
+            sx,
+            sy,
+            text,
+            read_only=is_read_only,
+            selected=(self.selected_model_instance_index == model_idx),
+        )
 
     def _draw_model_labels(self: "BTGDisplayApp") -> None:
         if not self.show_model_labels:
@@ -1283,24 +1330,36 @@ class RenderMixin:
 
         if self.opengl_enabled:
             self._gl_begin_2d()
-            for _depth, sx, sy, text, _is_ac_model, model_idx in labels:
+            for _depth, sx, sy, text, _is_ac_model, is_read_only, model_idx in labels:
                 selected = self.selected_model_instance_index == model_idx
                 display_text = f"*{text}" if selected else text
                 text_w, _text_h = self.font_small.size(display_text)
-                dot_color = (0.45, 1.0, 0.45, 0.95) if selected else (1.0, 0.85, 0.15, 0.95)
+                if is_read_only:
+                    dot_color = (1.0, 0.45, 0.35, 0.95) if selected else (1.0, 0.24, 0.22, 0.95)
+                else:
+                    dot_color = (0.45, 1.0, 0.45, 0.95) if selected else (1.0, 0.85, 0.15, 0.95)
                 self._gl_draw_rect(sx - 2, sy - 2, 5, 5, dot_color)
                 self._gl_draw_rect(sx + 7, sy - 2, text_w + 14, 18, (0.04, 0.05, 0.08, 0.76))
-                text_color = (175, 255, 175) if selected else (250, 245, 225)
+                if is_read_only:
+                    text_color = (255, 200, 190) if selected else (255, 165, 150)
+                else:
+                    text_color = (175, 255, 175) if selected else (250, 245, 225)
                 self._gl_draw_text(display_text, sx + 10, sy, text_color, self.font_small)
             self._gl_end_2d()
             return
 
-        for _depth, sx, sy, text, _is_ac_model, model_idx in labels:
+        for _depth, sx, sy, text, _is_ac_model, is_read_only, model_idx in labels:
             selected = self.selected_model_instance_index == model_idx
-            dot_color = (115, 255, 115) if selected else (255, 215, 70)
+            if is_read_only:
+                dot_color = (255, 130, 112) if selected else (255, 70, 60)
+            else:
+                dot_color = (115, 255, 115) if selected else (255, 215, 70)
             pygame.draw.circle(self.screen, dot_color, (int(sx), int(sy)), 2)
             display_text = f"*{text}" if selected else text
-            text_color = (175, 255, 175) if selected else (250, 245, 225)
+            if is_read_only:
+                text_color = (255, 200, 190) if selected else (255, 165, 150)
+            else:
+                text_color = (175, 255, 175) if selected else (250, 245, 225)
             text_surf = self.font_small.render(display_text, True, text_color)
             tw, th = text_surf.get_size()
             bg = pygame.Rect(int(sx) + 7, int(sy) - 2, tw + 8, th + 4)
@@ -1414,9 +1473,9 @@ class RenderMixin:
 
         GL = self.GL
 
-        textured_batch_data_static: Dict[int, Dict[str, List[float]]] = {}
-        textured_batch_data_model: Dict[int, Dict[str, List[float]]] = {}
-        textured_batch_data_model_by_instance: Dict[int, Dict[int, Dict[str, List[float]]]] = {}
+        textured_batch_data_static: Dict[Tuple[int, bool], Dict[str, List[float]]] = {}
+        textured_batch_data_model: Dict[Tuple[int, bool], Dict[str, List[float]]] = {}
+        textured_batch_data_model_by_instance: Dict[int, Dict[Tuple[int, bool], Dict[str, List[float]]]] = {}
         material_to_texture: Dict[str, Optional[str]] = {}
         missing_materials: set[str] = set()
         unique_materials = {m for m in mesh.face_materials if m}
@@ -1457,11 +1516,12 @@ class RenderMixin:
             resolved_faces += 1
             textured_face_mask[fi] = True
 
+            is_two_sided = material.startswith("__tree__:")
             if fi < static_face_limit:
                 target_batches = textured_batch_data_static
             else:
                 target_batches = textured_batch_data_model
-            batch = target_batches.setdefault(texture_id, {"v": [], "n": [], "t": []})
+            batch = target_batches.setdefault((texture_id, is_two_sided), {"v": [], "n": [], "t": []})
             for vidx, tidx in ((a, ta), (b, tb), (c, tc)):
                 vx, vy, vz = mesh.vertices[vidx]
                 nx, ny, nz = normals[vidx]
@@ -1503,7 +1563,8 @@ class RenderMixin:
                     continue
 
                 a, b, c = mesh.faces[fi]
-                batch = per_instance.setdefault(texture_id, {"v": [], "n": [], "t": []})
+                is_two_sided = material.startswith("__tree__:")
+                batch = per_instance.setdefault((texture_id, is_two_sided), {"v": [], "n": [], "t": []})
                 for vidx, tidx in ((a, ta), (b, tb), (c, tc)):
                     vx, vy, vz = mesh.vertices[vidx]
                     nx, ny, nz = normals[vidx]
@@ -1512,16 +1573,18 @@ class RenderMixin:
                     batch["n"].extend((nx, ny, nz))
                     batch["t"].extend((u, v))
 
-        def _batches_from_dict(batch_dict: Dict[int, Dict[str, List[float]]]) -> List[Tuple[int, object, object, object, int]]:
-            built: List[Tuple[int, object, object, object, int]] = []
-            for texture_id, batch in batch_dict.items():
+        def _batches_from_dict(
+            batch_dict: Dict[Tuple[int, bool], Dict[str, List[float]]]
+        ) -> List[Tuple[int, object, object, object, int, bool]]:
+            built: List[Tuple[int, object, object, object, int, bool]] = []
+            for (texture_id, is_two_sided), batch in batch_dict.items():
                 vertex_count = len(batch["v"]) // 3
                 if vertex_count <= 0:
                     continue
                 vbuf = (GL.GLfloat * len(batch["v"]))(*batch["v"])
                 nbuf = (GL.GLfloat * len(batch["n"]))(*batch["n"])
                 tbuf = (GL.GLfloat * len(batch["t"]))(*batch["t"])
-                built.append((texture_id, vbuf, nbuf, tbuf, vertex_count))
+                built.append((texture_id, vbuf, nbuf, tbuf, vertex_count, is_two_sided))
             return built
 
         self.gl_textured_static_batches = _batches_from_dict(textured_batch_data_static)
@@ -1588,7 +1651,7 @@ class RenderMixin:
         if selected_idx is not None and not (0 <= selected_idx < len(self.scene_model_instances)):
             return False
 
-        textured_batch_data_model: Dict[int, Dict[str, List[float]]] = {}
+        textured_batch_data_model: Dict[Tuple[int, bool], Dict[str, List[float]]] = {}
         material_to_texture: Dict[str, Optional[str]] = {}
 
         if selected_idx is None:
@@ -1630,7 +1693,8 @@ class RenderMixin:
                 vc = mesh.vertices[c]
                 normal = v_norm(v_cross(v_sub(vb, va), v_sub(vc, va)))
 
-                batch = textured_batch_data_model.setdefault(texture_id, {"v": [], "n": [], "t": []})
+                is_two_sided = material.startswith("__tree__:")
+                batch = textured_batch_data_model.setdefault((texture_id, is_two_sided), {"v": [], "n": [], "t": []})
                 for vidx, tidx in ((a, ta), (b, tb), (c, tc)):
                     vx, vy, vz = mesh.vertices[vidx]
                     u, v = mesh.texcoords[tidx]
@@ -1638,21 +1702,21 @@ class RenderMixin:
                     batch["n"].extend((normal[0], normal[1], normal[2]))
                     batch["t"].extend((u, v))
 
-        built_model: List[Tuple[int, object, object, object, int]] = []
-        for texture_id, batch in textured_batch_data_model.items():
+        built_model: List[Tuple[int, object, object, object, int, bool]] = []
+        for (texture_id, is_two_sided), batch in textured_batch_data_model.items():
             vertex_count = len(batch["v"]) // 3
             if vertex_count <= 0:
                 continue
             vbuf = (GL.GLfloat * len(batch["v"]))(*batch["v"])
             nbuf = (GL.GLfloat * len(batch["n"]))(*batch["n"])
             tbuf = (GL.GLfloat * len(batch["t"]))(*batch["t"])
-            built_model.append((texture_id, vbuf, nbuf, tbuf, vertex_count))
+            built_model.append((texture_id, vbuf, nbuf, tbuf, vertex_count, is_two_sided))
 
         if selected_idx is None:
             self.gl_textured_model_batches = built_model
         else:
             self.gl_textured_model_batches_by_instance[selected_idx] = built_model
-            merged_model_batches: List[Tuple[int, object, object, object, int]] = []
+            merged_model_batches: List[Tuple[int, object, object, object, int, bool]] = []
             for idx in sorted(self.gl_textured_model_batches_by_instance.keys()):
                 merged_model_batches.extend(self.gl_textured_model_batches_by_instance[idx])
             self.gl_textured_model_batches = merged_model_batches
@@ -2034,8 +2098,8 @@ class RenderMixin:
         GL.glDepthFunc(GL.GL_LEQUAL)
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
 
-        opaque_batches: List[Tuple[int, object, object, object, int]] = []
-        alpha_batches: List[Tuple[int, object, object, object, int]] = []
+        opaque_batches: List[Tuple[int, object, object, object, int, bool]] = []
+        alpha_batches: List[Tuple[int, object, object, object, int, bool]] = []
         for batch in self.gl_textured_batches:
             texture_id = batch[0]
             if self.texture_has_alpha_by_id.get(texture_id, False):
@@ -2043,10 +2107,24 @@ class RenderMixin:
             else:
                 opaque_batches.append(batch)
 
+        current_two_sided: Optional[bool] = None
+
+        def _apply_cull_state(is_two_sided: bool) -> None:
+            nonlocal current_two_sided
+            if current_two_sided is not None and current_two_sided == is_two_sided:
+                return
+            current_two_sided = is_two_sided
+            if is_two_sided:
+                GL.glDisable(GL.GL_CULL_FACE)
+            else:
+                GL.glEnable(GL.GL_CULL_FACE)
+                GL.glCullFace(GL.GL_BACK)
+
         # Opaque textured geometry first, depth-writing enabled.
         GL.glDisable(GL.GL_BLEND)
         GL.glDepthMask(GL.GL_TRUE)
-        for texture_id, vbuf, nbuf, tbuf, vertex_count in opaque_batches:
+        for texture_id, vbuf, nbuf, tbuf, vertex_count, is_two_sided in opaque_batches:
+            _apply_cull_state(is_two_sided)
             GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
             GL.glVertexPointer(3, GL.GL_FLOAT, 0, vbuf)
             GL.glNormalPointer(GL.GL_FLOAT, 0, nbuf)
@@ -2062,7 +2140,8 @@ class RenderMixin:
                 GL.glEnable(GL.GL_ALPHA_TEST)
                 GL.glAlphaFunc(GL.GL_GREATER, 0.01)
 
-            for texture_id, vbuf, nbuf, tbuf, vertex_count in alpha_batches:
+            for texture_id, vbuf, nbuf, tbuf, vertex_count, is_two_sided in alpha_batches:
+                _apply_cull_state(is_two_sided)
                 GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
                 GL.glVertexPointer(3, GL.GL_FLOAT, 0, vbuf)
                 GL.glNormalPointer(GL.GL_FLOAT, 0, nbuf)
@@ -2075,6 +2154,8 @@ class RenderMixin:
         GL.glDepthMask(GL.GL_TRUE)
         GL.glDepthFunc(GL.GL_LESS)
         GL.glEnable(GL.GL_BLEND)
+        GL.glEnable(GL.GL_CULL_FACE)
+        GL.glCullFace(GL.GL_BACK)
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
         GL.glDisableClientState(GL.GL_TEXTURE_COORD_ARRAY)
         GL.glDisableClientState(GL.GL_NORMAL_ARRAY)
@@ -2181,6 +2262,8 @@ class RenderMixin:
             stg_line = (
                 f"STG entries: {sd.get('entries', 0)} | BTG objs: {sd.get('btg_objects_loaded', 0)}"
                 f" | Model objs: {sd.get('model_objects_loaded', 0)}"
+                f" | RO model objs: {sd.get('readonly_model_objects_loaded', 0)}"
+                f" | Tree lists: {sd.get('tree_lists_loaded', 0)} ({sd.get('tree_points_loaded', 0)} trees)"
                 f" | Proxy objs: {sd.get('proxy_objects_loaded', 0)} | Skipped: {sd.get('skipped', 0)}"
             )
             stg_label = self.font_small.render(stg_line, True, (205, 190, 160))
@@ -2267,6 +2350,8 @@ class RenderMixin:
             stg_line = (
                 f"STG entries: {sd.get('entries', 0)} | BTG objs: {sd.get('btg_objects_loaded', 0)}"
                 f" | Model objs: {sd.get('model_objects_loaded', 0)}"
+                f" | RO model objs: {sd.get('readonly_model_objects_loaded', 0)}"
+                f" | Tree lists: {sd.get('tree_lists_loaded', 0)} ({sd.get('tree_points_loaded', 0)} trees)"
                 f" | Proxy objs: {sd.get('proxy_objects_loaded', 0)} | Skipped: {sd.get('skipped', 0)}"
             )
             self._gl_draw_text(stg_line, 12, stg_line_y, (205, 190, 160), self.font_small)

@@ -54,6 +54,7 @@ class MenuMixin:
             "Menu Language": "main.menu_language",
             "Help Text File": "main.help_text_file",
             "Reload Help Text": "main.reload_help_text",
+            "Layers": "main.layers",
             "Flightgear Location": "main.flightgear_location",
             "Custom Scenery Paths": "main.custom_scenery_paths",
             "Grid Settings": "main.grid_settings",
@@ -90,6 +91,144 @@ class MenuMixin:
             except Exception:
                 return f"Toggle Nudge Mode ({mode})"
 
+        layer_items: Dict[str, Tuple[str, str, str, str]] = {
+            "Objects": (
+                "objects",
+                "lock_read_only_objects",
+                "show_read_only_objects",
+                "show_read_only_objects_labels",
+            ),
+            "Buildings": (
+                "buildings",
+                "lock_read_only_buildings",
+                "show_read_only_buildings",
+                "show_read_only_buildings_labels",
+            ),
+            "Roads": (
+                "roads",
+                "lock_read_only_roads",
+                "show_read_only_roads",
+                "show_read_only_roads_labels",
+            ),
+            "Pylons": (
+                "pylons",
+                "lock_read_only_pylons",
+                "show_read_only_pylons",
+                "show_read_only_pylons_labels",
+            ),
+            "Details": (
+                "details",
+                "lock_read_only_details",
+                "show_read_only_details",
+                "show_read_only_details_labels",
+            ),
+            "Trees": (
+                "trees",
+                "lock_read_only_trees",
+                "show_read_only_trees",
+                "show_read_only_trees_labels",
+            ),
+        }
+        if self.menu_mode == "main_options_ui_layers" and item in layer_items:
+            _layer_id, lock_attr, visible_attr, labels_attr = layer_items[item]
+            editability_state = (
+                self._menu_t("state.locked", "LOCKED")
+                if bool(getattr(self, lock_attr, True))
+                else self._menu_t("state.unlocked", "UNLOCKED")
+            )
+            visibility_state = (
+                self._menu_t("state.visible", "VISIBLE")
+                if bool(getattr(self, visible_attr, True))
+                else self._menu_t("state.hidden", "HIDDEN")
+            )
+            labels_state = (
+                self._menu_t("state.labeled", "LABELED")
+                if bool(getattr(self, labels_attr, True))
+                else self._menu_t("state.unlabeled", "UNLABELED")
+            )
+            template = self._menu_t("main.layers_row_fmt", "{layer}: {editability}, {visibility}, {labels}")
+            if "{labels}" not in template:
+                template = f"{template}, {{labels}}"
+            try:
+                return template.format(
+                    layer=item,
+                    editability=editability_state,
+                    visibility=visibility_state,
+                    labels=labels_state,
+                )
+            except Exception:
+                return f"{item}: {editability_state}, {visibility_state}, {labels_state}"
+
+        selected_layer_name = {
+            "objects": "Objects",
+            "buildings": "Buildings",
+            "roads": "Roads",
+            "pylons": "Pylons",
+            "details": "Details",
+            "trees": "Trees",
+        }.get(str(getattr(self, "layers_menu_selected_layer", "objects")).strip().lower(), "Objects")
+        selected_layer_lock_attr = {
+            "Objects": "lock_read_only_objects",
+            "Buildings": "lock_read_only_buildings",
+            "Roads": "lock_read_only_roads",
+            "Pylons": "lock_read_only_pylons",
+            "Details": "lock_read_only_details",
+            "Trees": "lock_read_only_trees",
+        }.get(selected_layer_name, "lock_read_only_objects")
+        selected_layer_visible_attr = {
+            "Objects": "show_read_only_objects",
+            "Buildings": "show_read_only_buildings",
+            "Roads": "show_read_only_roads",
+            "Pylons": "show_read_only_pylons",
+            "Details": "show_read_only_details",
+            "Trees": "show_read_only_trees",
+        }.get(selected_layer_name, "show_read_only_objects")
+
+        if item == "Layer Editability":
+            state = (
+                self._menu_t("state.locked", "LOCKED")
+                if bool(getattr(self, selected_layer_lock_attr, True))
+                else self._menu_t("state.editable", "EDITABLE")
+            )
+            template = self._menu_t("main.layers_editability_fmt", "Editability: {state}")
+            try:
+                return template.format(state=state)
+            except Exception:
+                return f"Editability: {state}"
+
+        if item == "Layer Visibility":
+            state = (
+                self._menu_t("state.visible", "VISIBLE")
+                if bool(getattr(self, selected_layer_visible_attr, True))
+                else self._menu_t("state.hidden", "HIDDEN")
+            )
+            template = self._menu_t("main.layers_visibility_fmt", "Visibility: {state}")
+            try:
+                return template.format(state=state)
+            except Exception:
+                return f"Visibility: {state}"
+
+        selected_layer_label_attr = {
+            "Objects": "show_read_only_objects_labels",
+            "Buildings": "show_read_only_buildings_labels",
+            "Roads": "show_read_only_roads_labels",
+            "Pylons": "show_read_only_pylons_labels",
+            "Details": "show_read_only_details_labels",
+            "Trees": "show_read_only_trees_labels",
+        }.get(selected_layer_name, "show_read_only_objects_labels")
+
+        if item == "Layer Labels":
+            state = (
+                self._menu_t("state.visible", "VISIBLE")
+                if bool(getattr(self, selected_layer_label_attr, True))
+                else self._menu_t("state.hidden", "HIDDEN")
+            )
+            template = self._menu_t("main.layers_labels_fmt", "Labels: {state}")
+            try:
+                return template.format(state=state)
+            except Exception:
+                return f"Labels: {state}"
+
         key = key_map.get(item)
         if key is None:
             return item
@@ -101,6 +240,8 @@ class MenuMixin:
             "main_file",
             "main_options",
             "main_options_ui",
+            "main_options_ui_layers",
+            "main_options_ui_layer_detail",
             "main_options_configuration",
             "main_options_view",
             "main_options_object_placement",
@@ -119,8 +260,22 @@ class MenuMixin:
                 "Menu Language",
                 "Help Text File",
                 "Reload Help Text",
+                "Layers",
                 "Preview Panel Location",
                 "Set Missing Material Color",
+            ],
+            "main_options_ui_layers": [
+                "Objects",
+                "Buildings",
+                "Roads",
+                "Pylons",
+                "Details",
+                "Trees",
+            ],
+            "main_options_ui_layer_detail": [
+                "Layer Editability",
+                "Layer Visibility",
+                "Layer Labels",
             ],
             "main_options_configuration": [
                 "Flightgear Location",
@@ -147,6 +302,8 @@ class MenuMixin:
             "main_file": "main",
             "main_options": "main",
             "main_options_ui": "main_options",
+            "main_options_ui_layers": "main_options_ui",
+            "main_options_ui_layer_detail": "main_options_ui_layers",
             "main_options_configuration": "main_options",
             "main_options_view": "main_options",
             "main_options_object_placement": "main_options",
@@ -154,6 +311,7 @@ class MenuMixin:
         return parent_map.get(active_mode)
 
     def _navigate_main_menu_back(self: "BTGDisplayApp") -> bool:
+        source_mode = self.menu_mode
         parent_mode = self._main_menu_parent_mode()
         if not parent_mode:
             return False
@@ -163,6 +321,17 @@ class MenuMixin:
             self.main_menu_index = 0
         else:
             self.main_menu_index = max(0, min(self.main_menu_index, len(items) - 1))
+        if source_mode == "main_options_ui_layer_detail" and parent_mode == "main_options_ui_layers":
+            row_by_layer = {
+                "objects": 0,
+                "buildings": 1,
+                "roads": 2,
+                "pylons": 3,
+                "details": 4,
+                "trees": 5,
+            }
+            selected_layer = str(getattr(self, "layers_menu_selected_layer", "objects") or "objects").strip().lower()
+            self.main_menu_index = row_by_layer.get(selected_layer, 0)
         self.main_menu_scroll_start = 0
         self._reset_menu_hover_scroll()
         return True
@@ -173,11 +342,23 @@ class MenuMixin:
             "main_file": ("title.menu_file", "File"),
             "main_options": ("title.menu_options", "Options"),
             "main_options_ui": ("title.menu_options_ui", "Options / UI"),
+            "main_options_ui_layers": ("title.menu_options_ui_layers", "Layers"),
+            "main_options_ui_layer_detail": ("title.menu_options_ui_layer_detail", "Layers"),
             "main_options_configuration": ("title.menu_options_configuration", "Options / Configuration"),
             "main_options_view": ("title.menu_options_view", "Options / View"),
             "main_options_object_placement": ("title.menu_options_object_placement", "Options / Object Placement"),
         }
         key, default = title_map.get(self.menu_mode, ("title.menu", "Menu"))
+        if self.menu_mode == "main_options_ui_layer_detail":
+            layer_name = {
+                "objects": "Objects",
+                "buildings": "Buildings",
+                "roads": "Roads",
+                "pylons": "Pylons",
+                "details": "Details",
+                "trees": "Trees",
+            }.get(str(getattr(self, "layers_menu_selected_layer", "objects")).strip().lower(), "Objects")
+            return self._menu_tf(key, "Layers / {layer}", layer=layer_name)
         return self._menu_t(key, default)
 
     def _resolve_menu_text_path(self: "BTGDisplayApp", file_path: str) -> str:
@@ -1828,6 +2009,32 @@ class MenuMixin:
                 self._reset_menu_hover_scroll()
                 return
 
+        elif self.menu_mode == "main_options_ui":
+            if item == "Layers":
+                self.menu_mode = "main_options_ui_layers"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+
+        elif self.menu_mode == "main_options_ui_layers":
+            layer_map = {
+                "Objects": "objects",
+                "Buildings": "buildings",
+                "Roads": "roads",
+                "Pylons": "pylons",
+                "Details": "details",
+                "Trees": "trees",
+            }
+            selected_layer = layer_map.get(item)
+            if selected_layer is not None:
+                self.layers_menu_selected_layer = selected_layer
+                self.menu_mode = "main_options_ui_layer_detail"
+                self.main_menu_index = 0
+                self.main_menu_scroll_start = 0
+                self._reset_menu_hover_scroll()
+                return
+
         # Map submenu leaf labels onto existing action identifiers.
         if self.menu_mode == "main_file":
             item = {
@@ -1904,6 +2111,70 @@ class MenuMixin:
                 "status.reload_help_failed",
                 "Reload failed: unable to load selected help text file",
             )
+        elif item in {"Layer Editability", "Layer Visibility", "Layer Labels"}:
+            selected_layer = str(getattr(self, "layers_menu_selected_layer", "objects") or "objects").strip().lower()
+            lock_attr_map = {
+                "objects": "lock_read_only_objects",
+                "buildings": "lock_read_only_buildings",
+                "roads": "lock_read_only_roads",
+                "pylons": "lock_read_only_pylons",
+                "details": "lock_read_only_details",
+                "trees": "lock_read_only_trees",
+            }
+            visible_attr_map = {
+                "objects": "show_read_only_objects",
+                "buildings": "show_read_only_buildings",
+                "roads": "show_read_only_roads",
+                "pylons": "show_read_only_pylons",
+                "details": "show_read_only_details",
+                "trees": "show_read_only_trees",
+            }
+            label_attr_map = {
+                "objects": "show_read_only_objects_labels",
+                "buildings": "show_read_only_buildings_labels",
+                "roads": "show_read_only_roads_labels",
+                "pylons": "show_read_only_pylons_labels",
+                "details": "show_read_only_details_labels",
+                "trees": "show_read_only_trees_labels",
+            }
+            layer_name = {
+                "objects": "Objects",
+                "buildings": "Buildings",
+                "roads": "Roads",
+                "pylons": "Pylons",
+                "details": "Details",
+                "trees": "Trees",
+            }.get(selected_layer, "Objects")
+
+            if item == "Layer Editability":
+                attr_name = lock_attr_map.get(selected_layer, "lock_read_only_objects")
+                setattr(self, attr_name, not bool(getattr(self, attr_name, True)))
+                try:
+                    self._persist_viewer_config()
+                except Exception:
+                    pass
+                state = self._menu_t("state.locked", "LOCKED") if bool(getattr(self, attr_name, True)) else self._menu_t("state.editable", "EDITABLE")
+                self._set_status_t("status.layer_editability_fmt", "{layer} editability: {state}", layer=layer_name, state=state)
+            elif item == "Layer Visibility":
+                attr_name = visible_attr_map.get(selected_layer, "show_read_only_objects")
+                setattr(self, attr_name, not bool(getattr(self, attr_name, True)))
+                try:
+                    self._persist_viewer_config()
+                except Exception:
+                    pass
+                if self._scene_is_loaded():
+                    self._reload_current_scene()
+                state = self._menu_t("state.visible", "VISIBLE") if bool(getattr(self, attr_name, True)) else self._menu_t("state.hidden", "HIDDEN")
+                self._set_status_t("status.layer_visibility_fmt", "{layer} visibility: {state}", layer=layer_name, state=state)
+            elif item == "Layer Labels":
+                attr_name = label_attr_map.get(selected_layer, "show_read_only_objects_labels")
+                setattr(self, attr_name, not bool(getattr(self, attr_name, True)))
+                try:
+                    self._persist_viewer_config()
+                except Exception:
+                    pass
+                state = self._menu_t("state.visible", "VISIBLE") if bool(getattr(self, attr_name, True)) else self._menu_t("state.hidden", "HIDDEN")
+                self._set_status_t("status.layer_labels_fmt", "{layer} labels: {state}", layer=layer_name, state=state)
         elif item == "Flightgear Location":
             self._open_file_browser(
                 "directory_select",

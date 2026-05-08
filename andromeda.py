@@ -92,6 +92,7 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         ]
         self.main_menu_index = 0
         self.main_menu_scroll_start: int = 0
+        self.layers_menu_selected_layer: str = "objects"
         self.custom_scenery_menu_index = 0
         self.custom_scenery_scroll_start: int = 0
         self.add_object_by_category: Dict[str, List[ObjectCatalogEntry]] = {}
@@ -136,7 +137,7 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.package_summary_lines: List[str] = []
         self.package_summary_return_mode: str = ""
         self.scene_switch_confirm_message: str = ""
-        self.frame_projected_model_labels: Optional[List[Tuple[float, float, float, str, bool, int]]] = None
+        self.frame_projected_model_labels: Optional[List[Tuple[float, float, float, str, bool, bool, int]]] = None
 
         self.binding_actions = [
             "forward",
@@ -266,6 +267,24 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         
         self.object_nudge_step_m = 1.0
         self.object_nudge_camera_relative = True
+        self.lock_read_only_objects = True
+        self.lock_read_only_buildings = True
+        self.lock_read_only_roads = True
+        self.lock_read_only_pylons = True
+        self.lock_read_only_details = True
+        self.lock_read_only_trees = True
+        self.show_read_only_objects = True
+        self.show_read_only_buildings = True
+        self.show_read_only_roads = True
+        self.show_read_only_pylons = True
+        self.show_read_only_details = True
+        self.show_read_only_trees = True
+        self.show_read_only_objects_labels = True
+        self.show_read_only_buildings_labels = True
+        self.show_read_only_roads_labels = True
+        self.show_read_only_pylons_labels = True
+        self.show_read_only_details_labels = True
+        self.show_read_only_trees_labels = True
         self.object_nudge_field_labels = ["Nudge distance (m)"]
         self.object_nudge_fields = ["1.0"]
         self.object_nudge_field_index = 0
@@ -370,6 +389,42 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
             self.object_nudge_step_m = max(0.01, float(config["object_nudge_step_m"]))
         if isinstance(config.get("object_nudge_camera_relative"), bool):
             self.object_nudge_camera_relative = bool(config["object_nudge_camera_relative"])
+        if isinstance(config.get("lock_read_only_objects"), bool):
+            self.lock_read_only_objects = bool(config["lock_read_only_objects"])
+        if isinstance(config.get("lock_read_only_buildings"), bool):
+            self.lock_read_only_buildings = bool(config["lock_read_only_buildings"])
+        if isinstance(config.get("lock_read_only_roads"), bool):
+            self.lock_read_only_roads = bool(config["lock_read_only_roads"])
+        if isinstance(config.get("lock_read_only_pylons"), bool):
+            self.lock_read_only_pylons = bool(config["lock_read_only_pylons"])
+        if isinstance(config.get("lock_read_only_details"), bool):
+            self.lock_read_only_details = bool(config["lock_read_only_details"])
+        if isinstance(config.get("lock_read_only_trees"), bool):
+            self.lock_read_only_trees = bool(config["lock_read_only_trees"])
+        if isinstance(config.get("show_read_only_objects"), bool):
+            self.show_read_only_objects = bool(config["show_read_only_objects"])
+        if isinstance(config.get("show_read_only_buildings"), bool):
+            self.show_read_only_buildings = bool(config["show_read_only_buildings"])
+        if isinstance(config.get("show_read_only_roads"), bool):
+            self.show_read_only_roads = bool(config["show_read_only_roads"])
+        if isinstance(config.get("show_read_only_pylons"), bool):
+            self.show_read_only_pylons = bool(config["show_read_only_pylons"])
+        if isinstance(config.get("show_read_only_details"), bool):
+            self.show_read_only_details = bool(config["show_read_only_details"])
+        if isinstance(config.get("show_read_only_trees"), bool):
+            self.show_read_only_trees = bool(config["show_read_only_trees"])
+        if isinstance(config.get("show_read_only_objects_labels"), bool):
+            self.show_read_only_objects_labels = bool(config["show_read_only_objects_labels"])
+        if isinstance(config.get("show_read_only_buildings_labels"), bool):
+            self.show_read_only_buildings_labels = bool(config["show_read_only_buildings_labels"])
+        if isinstance(config.get("show_read_only_roads_labels"), bool):
+            self.show_read_only_roads_labels = bool(config["show_read_only_roads_labels"])
+        if isinstance(config.get("show_read_only_pylons_labels"), bool):
+            self.show_read_only_pylons_labels = bool(config["show_read_only_pylons_labels"])
+        if isinstance(config.get("show_read_only_details_labels"), bool):
+            self.show_read_only_details_labels = bool(config["show_read_only_details_labels"])
+        if isinstance(config.get("show_read_only_trees_labels"), bool):
+            self.show_read_only_trees_labels = bool(config["show_read_only_trees_labels"])
         if isinstance(config.get("object_nudge_repeat_delay_s"), (int, float)):
             self.object_nudge_repeat_delay_s = max(0.0, float(config["object_nudge_repeat_delay_s"]))
         if isinstance(config.get("object_nudge_repeat_interval_s"), (int, float)):
@@ -531,10 +586,10 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.crosshair_hover_model_index: Optional[int] = None
         self.selected_model_instance_index: Optional[int] = None
         self.clipboard_instance: Optional[STGModelInstance] = None
-        self.gl_textured_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int]] = []
-        self.gl_textured_static_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int]] = []
-        self.gl_textured_model_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int]] = []
-        self.gl_textured_model_batches_by_instance: Dict[int, List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int]]] = {}
+        self.gl_textured_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int, bool]] = []
+        self.gl_textured_static_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int, bool]] = []
+        self.gl_textured_model_batches: List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int, bool]] = []
+        self.gl_textured_model_batches_by_instance: Dict[int, List[Tuple[int, ctypes.Array, ctypes.Array, ctypes.Array, int, bool]]] = {}
         self.last_debug: Dict[str, object] = {
             "faces_with_material": 0,
             "faces_with_uv": 0,
@@ -555,6 +610,9 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
             "entries": 0,
             "btg_objects_loaded": 0,
             "model_objects_loaded": 0,
+            "readonly_model_objects_loaded": 0,
+            "tree_lists_loaded": 0,
+            "tree_points_loaded": 0,
             "proxy_objects_loaded": 0,
             "skipped": 0,
         }
