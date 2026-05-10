@@ -5,6 +5,8 @@
 # Generic states/modes
 state.on=ENCENDIDO
 state.off=APAGADO
+state.load=CARGAR
+state.ignore=IGNORAR
 mode.camera_relative=Relativo a la cámara
 mode.world_relative=Relativo mundial
 
@@ -16,6 +18,7 @@ main.menu_language=Idioma del menú
 main.help_text_file=Archivo de texto de ayuda
 main.reload_help_text=Recargar texto de ayuda
 main.flightgear_location=Ubicación del equipo de vuelo
+main.layer_load=Carga de capa
 main.custom_scenery_paths=Caminos de paisajes personalizados
 main.grid_settings=Configuración de cuadrícula
 main.add_object=Agregar objeto
@@ -32,6 +35,7 @@ main.set_camera_clipping=Establecer recorte de cámara
 main.change_keyboard_bindings=Cambiar enlaces de teclado
 main.exit=Salida
 main.showing_range_fmt=Mostrando {first}-{last} de {total}
+main.layers_load_fmt=Carga: {state}
 
 # Menu titles
 title.menu=Menú
@@ -172,6 +176,7 @@ status.save_failed_no_scene_stg=Error al guardar: no hay ningún archivo STG aso
 status.save_failed_no_target=Error al guardar: no se proporcionó la ruta de destino
 status.save_failed_fmt=Error al guardar: {error}
 status.saved_stg_fmt=STG guardado: {filename} | escribió {count} objetos de escena
+status.layer_load_fmt=Modo de carga de {layer}: {state}
 
 # Selection/object manipulation status
 status.select_model_first=Seleccione un modelo primero (cruz + clic izquierdo)

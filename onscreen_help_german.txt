@@ -40,6 +40,9 @@ Ziehen mit der linken Maustaste (Mausmodus): Ausgewähltes Objekt in X/Y verschi
 Umschalt+Linksziehen: Maus Y -> Objekt Z, Maus X -> Objekt gieren
 Leerzeichen: Objektmenü hinzufügen
 Menü > Flightgear-Position: Textur-Root festlegen
+Menü > Optionen > UI > Ebenen > <Ebene>: Ebenenladen (LADEN/IGNORIEREN)
+LADEN: Ebene in das schreibgeschützte STG-Laden/Anzeigen einbeziehen
+IGNORIEREN: Laden/Anzeigen der Ebene überspringen
 esc: Menü
 .: Kachel zoomen/neu gestalten
 Registerkarte: Drahtmodell umschalten

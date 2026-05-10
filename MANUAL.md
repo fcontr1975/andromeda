@@ -118,6 +118,26 @@ Main menu includes:
 - Options -> View: textured toggle, camera start view, camera clipping
 - Options -> Object Placement: Grid settings, nudge mode, nudge distance, nudge repeat
 
+Layer controls (Options -> UI -> Layers -> <Layer>) now include:
+
+- Layer Load: `LOAD` or `IGNORE`
+- Layer Editability: locked/unlocked
+- Layer Visibility: visible/hidden
+- Layer Labels: labeled/unlabeled
+
+Important behavior:
+
+- `IGNORE` means the layer is excluded from read-only STG layer loading and therefore not displayed.
+- `LOAD` includes that layer in loading and display.
+- Changing Layer Load or Layer Visibility while a scene is loaded triggers a scene reload so the setting applies immediately.
+
+## 8.1. Staged Loading and Progress
+
+- Primary STG + terrain/base content activates first for faster time-to-interaction.
+- Associated read-only layers (Objects/Buildings/Details/Roads/Pylons/Trees) stream in the background.
+- A thin loading bar at the top shows current load task and percent complete.
+- Console telemetry (`[LAYER STREAM]`) logs each layer parse/load/queue/merge step.
+
 ## 9. Creating a Scenery Package
 
 Use this when you want to distribute the scenery used by the current STG:
@@ -164,9 +184,24 @@ You can select these in-app from the menu.
 - Verify object files exist under scanned `Models/` path.
 - Add scenery roots in **Custom Scenery Paths**, then refresh catalog.
 
+### Loading appears stalled on a layer (for example Roads)
+
+- Check console output for `[LAYER STREAM]` lines.
+- A later layer can appear stuck when the main thread is still merging a previously queued heavy layer.
+- Use **Options -> UI -> Layers** and set non-essential layers to `IGNORE` for dense tiles.
+- If memory pressure is high, reduce enabled layers and reload the scene.
+
 ### I changed settings and want to inspect/reset persisted state
 
 Config file path:
 
 - `${XDG_CONFIG_HOME}/flightgear_btg_viewer.json`, or
 - `~/.config/flightgear_btg_viewer.json`
+
+## 12. Localization Maintenance (Contributors)
+
+When adding or changing UI elements:
+
+- Use localization keys (do not hardcode user-facing text where localization is expected).
+- Update all menu localization files (`onsreen_ui_english.txt`, `onsreen_ui_french.txt`, `onsreen_ui_german.txt`, `onsreen_ui_spanish.txt`) in the same change.
+- Keep key names consistent across languages.

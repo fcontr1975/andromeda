@@ -7,8 +7,11 @@ It is designed for editing `.stg` tiles with immediate visual feedback, object c
 ## Highlights
 
 - Open and inspect `.stg`, `.btg`, and `.btg.gz` scenes.
+- Staged scene loading: primary STG content appears first, then read-only layers stream in the background.
+- Top status loading bar with current task and percent complete.
 - Add objects from FlightGear `Objects/` and `Models/` catalogs.
 - Select, move, rotate, copy, paste, delete, and cycle scene objects.
+- Per-layer controls for Load/Ignore, editability lock, visibility, and labels.
 - Mouse edit mode for fast drag-based object transforms.
 - Selected-object terrain shadow footprint (OpenGL path).
 - Save back to STG while preserving non-object lines.
@@ -108,6 +111,8 @@ Help overlay files:
 
 Select language/help files from the in-app menu.
 
+Contributor note: when adding or changing UI text, update all `onsreen_ui_*.txt` localization files in the same change.
+
 ## Selection Aids
 
 - In OpenGL mode, the selected object can display a projected footprint shadow
@@ -116,6 +121,10 @@ Select language/help files from the in-app menu.
 
 ## Recent Improvements
 
+- Staged loading pipeline update: once primary STG + terrain + base objects are ready, the scene activates immediately while ancillary layers stream in without blocking interaction.
+- Layer loading telemetry and stability update: expanded `[LAYER STREAM]` console diagnostics, thread-safe main-thread scene merges, and queue backpressure for large tiles.
+- Large-tile memory guardrails: per-layer entry/model/face caps and RSS soft-cap handling to reduce unresponsive behavior in dense metro scenes.
+- Layer menu update: each read-only layer now includes **LOAD/IGNORE** in addition to lock/visibility/labels; **IGNORE** excludes that layer from STG layer loading and display.
 - Scenery packaging workflow: **File -> Create Scenery Package** now builds a distributable zip from current STG dependencies and shows a post-build summary dialog.
 - Package requester quality-of-life: added **[Create Folder]** with in-app folder-name prompt, so you can make a distribution folder without leaving Andromeda.
 - Windows path picker update: when browsing upward to filesystem root, drive letters are now listed so you can switch drives while selecting FlightGear paths.

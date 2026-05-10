@@ -2162,7 +2162,38 @@ class RenderMixin:
         GL.glDisableClientState(GL.GL_VERTEX_ARRAY)
         GL.glDisable(GL.GL_TEXTURE_2D)
 
+    def _draw_load_progress(self: "BTGDisplayApp") -> None:
+        task = str(getattr(self, "load_progress_task", "") or "").strip()
+        if not task:
+            return
+        fraction = max(0.0, min(1.0, float(getattr(self, "load_progress_fraction", 0.0))))
+        bar_x = 12
+        bar_h = 3
+        bg_w = max(0, self.size[0] - 24)
+        bar_w = max(0, int(bg_w * fraction))
+
+        if self.opengl_enabled:
+            self._gl_draw_rect(bar_x, 4, bg_w, bar_h, (1.0, 1.0, 1.0, 0.16))
+            if bar_w > 0:
+                self._gl_draw_rect(bar_x, 4, bar_w, bar_h, (1.0, 1.0, 1.0, 1.0))
+            self._gl_draw_text(
+                f"{task}, {int(fraction * 100):d}% loaded",
+                bar_x,
+                14,
+                (255, 255, 255),
+                self.font_tiny,
+                cache=False,
+            )
+            return
+
+        pygame.draw.rect(self.screen, (70, 70, 70), (bar_x, 6, bg_w, bar_h))
+        if bar_w > 0:
+            pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, 6, bar_w, bar_h))
+        text_surf = self.font_tiny.render(f"{task}, {int(fraction * 100):d}% loaded", True, (235, 235, 235))
+        self.screen.blit(text_surf, (bar_x, 16))
+
     def _draw_status(self: "BTGDisplayApp") -> None:
+        self._draw_load_progress()
         if self.show_debug:
             if self.opengl_enabled:
                 self._draw_status_gl()
@@ -2915,6 +2946,7 @@ class RenderMixin:
         self.screen.blit(overlay, (0, 0))
 
     def render(self: "BTGDisplayApp") -> None:
+        self._poll_background_scene_updates()
         perf_enabled = bool(getattr(self, "rotation_perf_debug_enabled", False))
         should_sample_render = False
         if perf_enabled:

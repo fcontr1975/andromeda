@@ -5,6 +5,8 @@
 # Generic states/modes
 state.on=ACTIVÉ
 state.off=DÉSACTIVÉ
+state.load=CHARGER
+state.ignore=IGNORER
 mode.camera_relative=Par rapport à la caméra
 mode.world_relative=Relatif mondial
 
@@ -16,6 +18,7 @@ main.menu_language=Langue des menus
 main.help_text_file=Fichier texte d'aide
 main.reload_help_text=Recharger le texte d'aide
 main.flightgear_location=Emplacement du train de vol
+main.layer_load=Chargement de la couche
 main.custom_scenery_paths=Chemins de paysages personnalisés
 main.grid_settings=Paramètres de la grille
 main.add_object=Ajouter un objet
@@ -32,6 +35,7 @@ main.set_camera_clipping=Définir le découpage de la caméra
 main.change_keyboard_bindings=Modifier les liaisons du clavier
 main.exit=Sortie
 main.showing_range_fmt=Affichage de {first}-{last} sur {total}
+main.layers_load_fmt=Chargement : {state}
 
 # Menu titles
 title.menu=Menu principal
@@ -172,6 +176,7 @@ status.save_failed_no_scene_stg=Échec de l'enregistrement : aucun fichier STG 
 status.save_failed_no_target=Échec de l'enregistrement : aucun chemin cible fourni
 status.save_failed_fmt=Échec de l'enregistrement : {error}
 status.saved_stg_fmt=STG enregistré : {filename} | a écrit {count} objets de scène
+status.layer_load_fmt=Mode de chargement {layer} : {state}
 
 # Selection/object manipulation status
 status.select_model_first=Sélectionnez d'abord un modèle (réticule + clic gauche)

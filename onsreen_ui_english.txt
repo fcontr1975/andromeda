@@ -5,6 +5,8 @@
 # Generic states/modes
 state.on=ON
 state.off=OFF
+state.load=LOAD
+state.ignore=IGNORE
 mode.camera_relative=Camera Relative
 mode.world_relative=World Relative
 
@@ -16,6 +18,7 @@ main.menu_language=Menu Language
 main.help_text_file=Help Text File
 main.reload_help_text=Reload Help Text
 main.flightgear_location=Flightgear Location
+main.layer_load=Layer Load
 main.custom_scenery_paths=Custom Scenery Paths
 main.grid_settings=Grid Settings
 main.add_object=Add Object
@@ -32,6 +35,7 @@ main.set_camera_clipping=Set Camera Clipping
 main.change_keyboard_bindings=Change Keyboard bindings
 main.exit=Exit
 main.showing_range_fmt=Showing {first}-{last} of {total}
+main.layers_load_fmt=Load: {state}
 
 # Menu titles
 title.menu=Menu
@@ -172,6 +176,7 @@ status.save_failed_no_scene_stg=Save failed: no STG file associated with current
 status.save_failed_no_target=Save failed: no target path provided
 status.save_failed_fmt=Save failed: {error}
 status.saved_stg_fmt=Saved STG: {filename} | wrote {count} scene objects
+status.layer_load_fmt={layer} load mode: {state}
 
 # Selection/object manipulation status
 status.select_model_first=Select a model first (crosshair + left click)

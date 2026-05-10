@@ -40,6 +40,9 @@ left drag (mouse mode): move selected object X/Y
 shift+left drag: mouse Y -> object Z, mouse X -> object yaw
 space: add object menu
 menu > Flightgear Location: set texture root
+menu > Options > UI > Layers > <Layer>: Layer Load (LOAD/IGNORE)
+LOAD: include layer in read-only STG loading/display
+IGNORE: skip layer loading/display
 esc: menu
 .: zoom/reframe tile
 tab: wireframe toggle

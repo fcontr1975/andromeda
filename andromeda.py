@@ -9,6 +9,7 @@ import argparse
 import ctypes
 import os
 import sys
+import threading
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 try:
@@ -78,6 +79,16 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.font_small = pygame.font.SysFont("DejaVu Sans", 16)
         self.font_large = pygame.font.SysFont("DejaVu Sans", 26)
         self.font_mono = pygame.font.SysFont("DejaVu Sans Mono", 18)
+        self.font_tiny = pygame.font.SysFont("DejaVu Sans", 10)
+        self.load_progress_task = ""
+        self.load_progress_fraction = 0.0
+        self.scene_load_updates: List[Tuple[List[BTGMesh], List[STGModelInstance], Dict[str, object], str]] = []
+        self.scene_load_updates_lock = threading.Lock()
+        self.read_only_layer_entry_cap = 25000
+        self.read_only_layer_model_cap = 700
+        self.read_only_layer_template_face_cap = 900000
+        self.read_only_rss_soft_cap_mb = 8192.0
+        self.layer_stream_telemetry_enabled = True
 
         self.running = True
         self.mouse_captured = False
@@ -273,6 +284,12 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
         self.lock_read_only_pylons = True
         self.lock_read_only_details = True
         self.lock_read_only_trees = True
+        self.load_read_only_objects = True
+        self.load_read_only_buildings = True
+        self.load_read_only_roads = True
+        self.load_read_only_pylons = True
+        self.load_read_only_details = True
+        self.load_read_only_trees = True
         self.show_read_only_objects = True
         self.show_read_only_buildings = True
         self.show_read_only_roads = True
@@ -401,6 +418,18 @@ class BTGDisplayApp(MenuMixin, RenderMixin, ControlsMixin, SceneMixin):
             self.lock_read_only_details = bool(config["lock_read_only_details"])
         if isinstance(config.get("lock_read_only_trees"), bool):
             self.lock_read_only_trees = bool(config["lock_read_only_trees"])
+        if isinstance(config.get("load_read_only_objects"), bool):
+            self.load_read_only_objects = bool(config["load_read_only_objects"])
+        if isinstance(config.get("load_read_only_buildings"), bool):
+            self.load_read_only_buildings = bool(config["load_read_only_buildings"])
+        if isinstance(config.get("load_read_only_roads"), bool):
+            self.load_read_only_roads = bool(config["load_read_only_roads"])
+        if isinstance(config.get("load_read_only_pylons"), bool):
+            self.load_read_only_pylons = bool(config["load_read_only_pylons"])
+        if isinstance(config.get("load_read_only_details"), bool):
+            self.load_read_only_details = bool(config["load_read_only_details"])
+        if isinstance(config.get("load_read_only_trees"), bool):
+            self.load_read_only_trees = bool(config["load_read_only_trees"])
         if isinstance(config.get("show_read_only_objects"), bool):
             self.show_read_only_objects = bool(config["show_read_only_objects"])
         if isinstance(config.get("show_read_only_buildings"), bool):

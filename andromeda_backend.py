@@ -906,6 +906,12 @@ def load_viewer_config() -> Dict[str, object]:
         lock_read_only_pylons = loaded.get("lock_read_only_pylons")
         lock_read_only_details = loaded.get("lock_read_only_details")
         lock_read_only_trees = loaded.get("lock_read_only_trees")
+        load_read_only_objects = loaded.get("load_read_only_objects")
+        load_read_only_buildings = loaded.get("load_read_only_buildings")
+        load_read_only_roads = loaded.get("load_read_only_roads")
+        load_read_only_pylons = loaded.get("load_read_only_pylons")
+        load_read_only_details = loaded.get("load_read_only_details")
+        load_read_only_trees = loaded.get("load_read_only_trees")
         show_read_only_objects = loaded.get("show_read_only_objects")
         show_read_only_buildings = loaded.get("show_read_only_buildings")
         show_read_only_roads = loaded.get("show_read_only_roads")
@@ -975,6 +981,18 @@ def load_viewer_config() -> Dict[str, object]:
             result["lock_read_only_details"] = lock_read_only_details
         if isinstance(lock_read_only_trees, bool):
             result["lock_read_only_trees"] = lock_read_only_trees
+        if isinstance(load_read_only_objects, bool):
+            result["load_read_only_objects"] = load_read_only_objects
+        if isinstance(load_read_only_buildings, bool):
+            result["load_read_only_buildings"] = load_read_only_buildings
+        if isinstance(load_read_only_roads, bool):
+            result["load_read_only_roads"] = load_read_only_roads
+        if isinstance(load_read_only_pylons, bool):
+            result["load_read_only_pylons"] = load_read_only_pylons
+        if isinstance(load_read_only_details, bool):
+            result["load_read_only_details"] = load_read_only_details
+        if isinstance(load_read_only_trees, bool):
+            result["load_read_only_trees"] = load_read_only_trees
         if isinstance(show_read_only_objects, bool):
             result["show_read_only_objects"] = show_read_only_objects
         if isinstance(show_read_only_buildings, bool):
@@ -1065,6 +1083,12 @@ def save_viewer_config(
     lock_read_only_pylons: bool = True,
     lock_read_only_details: bool = True,
     lock_read_only_trees: bool = True,
+    load_read_only_objects: bool = True,
+    load_read_only_buildings: bool = True,
+    load_read_only_roads: bool = True,
+    load_read_only_pylons: bool = True,
+    load_read_only_details: bool = True,
+    load_read_only_trees: bool = True,
     show_read_only_objects: bool = True,
     show_read_only_buildings: bool = True,
     show_read_only_roads: bool = True,
@@ -1117,6 +1141,12 @@ def save_viewer_config(
         "lock_read_only_pylons": bool(lock_read_only_pylons),
         "lock_read_only_details": bool(lock_read_only_details),
         "lock_read_only_trees": bool(lock_read_only_trees),
+        "load_read_only_objects": bool(load_read_only_objects),
+        "load_read_only_buildings": bool(load_read_only_buildings),
+        "load_read_only_roads": bool(load_read_only_roads),
+        "load_read_only_pylons": bool(load_read_only_pylons),
+        "load_read_only_details": bool(load_read_only_details),
+        "load_read_only_trees": bool(load_read_only_trees),
         "show_read_only_objects": bool(show_read_only_objects),
         "show_read_only_buildings": bool(show_read_only_buildings),
         "show_read_only_roads": bool(show_read_only_roads),

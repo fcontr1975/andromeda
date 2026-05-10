@@ -40,6 +40,9 @@ Arrastrar hacia la izquierda (modo mouse): mueve el objeto seleccionado X/Y
 Mayús+arrastrar hacia la izquierda: mouse Y -> objeto Z, mouse X -> objeto guiñada
 espacio: menú agregar objeto
 menú > Ubicación del equipo de vuelo: establecer raíz de textura
+menú > Opciones > UI > Capas > <Capa>: Carga de capa (CARGAR/IGNORAR)
+CARGAR: incluir la capa en la carga/visualización STG de solo lectura
+IGNORAR: omitir la carga/visualización de la capa
 esc: menú
 .: mosaico de zoom/reencuadre
 pestaña: alternar estructura alámbrica

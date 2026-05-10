@@ -40,6 +40,9 @@ glisser vers la gauche (mode souris) : déplacer l'objet sélectionné X/Y
 Maj+glisser vers la gauche : souris Y -> objet Z, souris X -> objet lacet
 espace : menu d'ajout d'objet
 menu > Emplacement du Flightgear : définir la racine de la texture
+menu > Options > UI > Couches > <Couche> : Chargement de couche (CHARGER/IGNORER)
+CHARGER : inclure la couche dans le chargement/affichage STG en lecture seule
+IGNORER : ignorer le chargement/affichage de la couche
 échap : menu
 .: vignette zoom/recadrage
 onglet : bascule filaire

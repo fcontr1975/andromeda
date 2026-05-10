@@ -5,6 +5,8 @@
 # Generic states/modes
 state.on=EIN
 state.off=AUS
+state.load=LADEN
+state.ignore=IGNORIEREN
 mode.camera_relative=Kamerarelativ
 mode.world_relative=Weltrelativ
 
@@ -16,6 +18,7 @@ main.menu_language=Menüsprache
 main.help_text_file=Hilfetextdatei
 main.reload_help_text=Hilfetext neu laden
 main.flightgear_location=Standort der Flugausrüstung
+main.layer_load=Ebenenladen
 main.custom_scenery_paths=Benutzerdefinierte Landschaftspfade
 main.grid_settings=Rastereinstellungen
 main.add_object=Objekt hinzufügen
@@ -32,6 +35,7 @@ main.set_camera_clipping=Legen Sie den Kameraausschnitt fest
 main.change_keyboard_bindings=Tastaturbelegungen ändern
 main.exit=Ausfahrt
 main.showing_range_fmt=Zeigt {first}-{last} von {total}
+main.layers_load_fmt=Laden: {state}
 
 # Menu titles
 title.menu=Speisekarte
@@ -172,6 +176,7 @@ status.save_failed_no_scene_stg=Speichern fehlgeschlagen: Mit der aktuellen Szen
 status.save_failed_no_target=Speichern fehlgeschlagen: Kein Zielpfad angegeben
 status.save_failed_fmt=Speichern fehlgeschlagen: {error}
 status.saved_stg_fmt=Gespeichertes STG: {filename} | hat {count} Szenenobjekte geschrieben
+status.layer_load_fmt={layer} Lademodus: {state}
 
 # Selection/object manipulation status
 status.select_model_first=Wählen Sie zuerst ein Modell aus (Fadenkreuz + Linksklick)

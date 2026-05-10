@@ -55,6 +55,7 @@ class MenuMixin:
             "Help Text File": "main.help_text_file",
             "Reload Help Text": "main.reload_help_text",
             "Layers": "main.layers",
+            "Layer Load": "main.layer_load",
             "Flightgear Location": "main.flightgear_location",
             "Custom Scenery Paths": "main.custom_scenery_paths",
             "Grid Settings": "main.grid_settings",
@@ -91,46 +92,57 @@ class MenuMixin:
             except Exception:
                 return f"Toggle Nudge Mode ({mode})"
 
-        layer_items: Dict[str, Tuple[str, str, str, str]] = {
+        layer_items: Dict[str, Tuple[str, str, str, str, str]] = {
             "Objects": (
                 "objects",
+                "load_read_only_objects",
                 "lock_read_only_objects",
                 "show_read_only_objects",
                 "show_read_only_objects_labels",
             ),
             "Buildings": (
                 "buildings",
+                "load_read_only_buildings",
                 "lock_read_only_buildings",
                 "show_read_only_buildings",
                 "show_read_only_buildings_labels",
             ),
             "Roads": (
                 "roads",
+                "load_read_only_roads",
                 "lock_read_only_roads",
                 "show_read_only_roads",
                 "show_read_only_roads_labels",
             ),
             "Pylons": (
                 "pylons",
+                "load_read_only_pylons",
                 "lock_read_only_pylons",
                 "show_read_only_pylons",
                 "show_read_only_pylons_labels",
             ),
             "Details": (
                 "details",
+                "load_read_only_details",
                 "lock_read_only_details",
                 "show_read_only_details",
                 "show_read_only_details_labels",
             ),
             "Trees": (
                 "trees",
+                "load_read_only_trees",
                 "lock_read_only_trees",
                 "show_read_only_trees",
                 "show_read_only_trees_labels",
             ),
         }
         if self.menu_mode == "main_options_ui_layers" and item in layer_items:
-            _layer_id, lock_attr, visible_attr, labels_attr = layer_items[item]
+            _layer_id, load_attr, lock_attr, visible_attr, labels_attr = layer_items[item]
+            load_state = (
+                self._menu_t("state.load", "LOAD")
+                if bool(getattr(self, load_attr, True))
+                else self._menu_t("state.ignore", "IGNORE")
+            )
             editability_state = (
                 self._menu_t("state.locked", "LOCKED")
                 if bool(getattr(self, lock_attr, True))
@@ -146,18 +158,21 @@ class MenuMixin:
                 if bool(getattr(self, labels_attr, True))
                 else self._menu_t("state.unlabeled", "UNLABELED")
             )
-            template = self._menu_t("main.layers_row_fmt", "{layer}: {editability}, {visibility}, {labels}")
+            template = self._menu_t("main.layers_row_fmt", "{layer}: {load}, {editability}, {visibility}, {labels}")
+            if "{load}" not in template:
+                template = f"{{layer}}: {{load}}, {{editability}}, {{visibility}}, {{labels}}"
             if "{labels}" not in template:
                 template = f"{template}, {{labels}}"
             try:
                 return template.format(
                     layer=item,
+                    load=load_state,
                     editability=editability_state,
                     visibility=visibility_state,
                     labels=labels_state,
                 )
             except Exception:
-                return f"{item}: {editability_state}, {visibility_state}, {labels_state}"
+                return f"{item}: {load_state}, {editability_state}, {visibility_state}, {labels_state}"
 
         selected_layer_name = {
             "objects": "Objects",
@@ -175,6 +190,14 @@ class MenuMixin:
             "Details": "lock_read_only_details",
             "Trees": "lock_read_only_trees",
         }.get(selected_layer_name, "lock_read_only_objects")
+        selected_layer_load_attr = {
+            "Objects": "load_read_only_objects",
+            "Buildings": "load_read_only_buildings",
+            "Roads": "load_read_only_roads",
+            "Pylons": "load_read_only_pylons",
+            "Details": "load_read_only_details",
+            "Trees": "load_read_only_trees",
+        }.get(selected_layer_name, "load_read_only_objects")
         selected_layer_visible_attr = {
             "Objects": "show_read_only_objects",
             "Buildings": "show_read_only_buildings",
@@ -183,6 +206,18 @@ class MenuMixin:
             "Details": "show_read_only_details",
             "Trees": "show_read_only_trees",
         }.get(selected_layer_name, "show_read_only_objects")
+
+        if item == "Layer Load":
+            state = (
+                self._menu_t("state.load", "LOAD")
+                if bool(getattr(self, selected_layer_load_attr, True))
+                else self._menu_t("state.ignore", "IGNORE")
+            )
+            template = self._menu_t("main.layers_load_fmt", "Load: {state}")
+            try:
+                return template.format(state=state)
+            except Exception:
+                return f"Load: {state}"
 
         if item == "Layer Editability":
             state = (
@@ -273,6 +308,7 @@ class MenuMixin:
                 "Trees",
             ],
             "main_options_ui_layer_detail": [
+                "Layer Load",
                 "Layer Editability",
                 "Layer Visibility",
                 "Layer Labels",
@@ -2111,8 +2147,16 @@ class MenuMixin:
                 "status.reload_help_failed",
                 "Reload failed: unable to load selected help text file",
             )
-        elif item in {"Layer Editability", "Layer Visibility", "Layer Labels"}:
+        elif item in {"Layer Load", "Layer Editability", "Layer Visibility", "Layer Labels"}:
             selected_layer = str(getattr(self, "layers_menu_selected_layer", "objects") or "objects").strip().lower()
+            load_attr_map = {
+                "objects": "load_read_only_objects",
+                "buildings": "load_read_only_buildings",
+                "roads": "load_read_only_roads",
+                "pylons": "load_read_only_pylons",
+                "details": "load_read_only_details",
+                "trees": "load_read_only_trees",
+            }
             lock_attr_map = {
                 "objects": "lock_read_only_objects",
                 "buildings": "lock_read_only_buildings",
@@ -2146,7 +2190,18 @@ class MenuMixin:
                 "trees": "Trees",
             }.get(selected_layer, "Objects")
 
-            if item == "Layer Editability":
+            if item == "Layer Load":
+                attr_name = load_attr_map.get(selected_layer, "load_read_only_objects")
+                setattr(self, attr_name, not bool(getattr(self, attr_name, True)))
+                try:
+                    self._persist_viewer_config()
+                except Exception:
+                    pass
+                if self._scene_is_loaded():
+                    self._reload_current_scene()
+                state = self._menu_t("state.load", "LOAD") if bool(getattr(self, attr_name, True)) else self._menu_t("state.ignore", "IGNORE")
+                self._set_status_t("status.layer_load_fmt", "{layer} load mode: {state}", layer=layer_name, state=state)
+            elif item == "Layer Editability":
                 attr_name = lock_attr_map.get(selected_layer, "lock_read_only_objects")
                 setattr(self, attr_name, not bool(getattr(self, attr_name, True)))
                 try:
